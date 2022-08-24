@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { OAuth2Client } from "google-auth-library";
-import { continueWithGoogle, signup } from "../controllers/auth";
+import { continueWithGoogle, login, signup } from "../controllers/auth";
 import multer, { Multer } from "multer";
 import HttpError from "../Errors/HTTPError";
 
@@ -38,5 +38,7 @@ const router = Router();
 router.post("/signup",upload.single("avatar"), signup);
 
 router.post("/google", continueWithGoogle);
+
+router.post("/login",login)
 
 export default router;

@@ -1,7 +1,7 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, RequestHandler, Response } from "express";
 import { User } from "../models/User";
 import { OAuth2Client } from "google-auth-library";
-import { createTokens, getImgUrl,deleteFile } from "../utils/utils";
+import { createTokens, getImgUrl, deleteFile } from "../utils/utils";
 import HttpError from "../Errors/HTTPError";
 
 const client = new OAuth2Client(
@@ -18,6 +18,12 @@ interface SignUp {
 	confirmedPassword: string;
 }
 
+interface Login {
+	email: string;
+	password: string;
+}
+
+/* Deals with authentication with google */
 export const continueWithGoogle = async (
 	req: Request,
 	res: Response,
@@ -42,7 +48,10 @@ export const continueWithGoogle = async (
 		if (user) {
 			const { accessToken, refreshToken } = createTokens(user.name, user.email);
 			res.status(200).json({
-				user: user,
+				user: {
+					...user,
+					password: null,
+				},
 				accessToken,
 				refreshToken,
 			});
@@ -60,7 +69,10 @@ export const continueWithGoogle = async (
 			newUser.email
 		);
 		res.status(200).json({
-			user: newUser,
+			user: {
+				...newUser,
+				password: null,
+			},
 			accessToken: accessToken,
 			refreshToken: refreshToken,
 		});
@@ -71,6 +83,7 @@ export const continueWithGoogle = async (
 	}
 };
 
+/* signing up with regular email */
 export const signup = async (
 	req: Request<never, never, SignUp>,
 	res: Response,
@@ -98,10 +111,46 @@ export const signup = async (
 
 		await user.save();
 
-		res.status(200).json(user);
+		res.status(200).json({ message: "user signed up successfully " });
 		return;
 	} catch (err) {
-		deleteFile(fileUrl)
+		deleteFile(fileUrl);
+		next(err);
+	}
+};
+
+export const login: RequestHandler<never, any, Login> = async (
+	req,
+	res,
+	next
+) => {
+	const { email, password } = req.body;
+	try {
+		const user = await User.findOne({ email: email });
+		if (!user) {
+			throw new HttpError(
+				"there is no user with this email please register",
+				400
+			);
+		}
+		const passwordValid = await user.comparePassword(password);
+		if (!passwordValid) {
+			throw new HttpError(
+				"you entered a wrong password please try again later",
+				401
+			);
+		}
+		const { accessToken, refreshToken } = createTokens(user.name, user.email);
+		res.status(200).json({
+			user: {
+				...user,
+				password: null,
+			},
+			accessToken: accessToken,
+			refreshToken: refreshToken,
+		});
+		res.send(user);
+	} catch (err) {
 		next(err);
 	}
 };
