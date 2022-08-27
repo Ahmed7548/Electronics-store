@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { OAuth2Client } from "google-auth-library";
 import { continueWithGoogle, login, signup } from "../controllers/auth";
-import multer, { Multer } from "multer";
+import multer from "multer";
 import HttpError from "../Errors/HTTPError";
+import { jsonValidator } from "../middlewares/jsonSchemaValidator";
 
 const multerStorage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -25,20 +25,34 @@ const upload = multer({
 			file.mimetype !== "image/jpeg" &&
 			file.mimetype !== "image/jpg"
 		) {
-			callback(new HttpError("please add file with either the extension of '.png', '.jpeg', or 'jpg'",400));
+			callback(
+				new HttpError(
+					"please add file with either the extension of '.png', '.jpeg', or 'jpg'",
+					400
+				)
+			);
 			return;
 		}
-		if(!file) return  callback(null,false)
-		callback(null,true)
+		if (!file) return callback(null, false);
+		callback(null, true);
 	},
 });
 
 const router = Router();
 
-router.post("/signup",upload.single("avatar"), signup);
+router.post(
+	"/signup",
+	upload.single("avatar"),
+	jsonValidator.validate({ schemaName: "sign-up", WhatToValidate: ["body"] }),
+	signup
+);
 
 router.post("/google", continueWithGoogle);
 
-router.post("/login",login)
+router.post(
+	"/login",
+	jsonValidator.validate({ schemaName: "login", WhatToValidate: ["body"] }),
+	login
+);
 
 export default router;

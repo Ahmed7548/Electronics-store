@@ -83,6 +83,10 @@ export const continueWithGoogle = async (
 	}
 };
 
+
+
+
+
 /* signing up with regular email */
 export const signup = async (
 	req: Request<never, never, SignUp>,
@@ -119,6 +123,10 @@ export const signup = async (
 	}
 };
 
+
+
+
+/* loging in */
 export const login: RequestHandler<never, any, Login> = async (
 	req,
 	res,
