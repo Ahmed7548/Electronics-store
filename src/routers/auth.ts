@@ -43,7 +43,7 @@ const router = Router();
 router.post(
 	"/signup",
 	upload.single("avatar"),
-	jsonValidator.validate({ schemaName: "sign-up", WhatToValidate: ["body"] }),
+	jsonValidator.validate({ schemaName: "sign-up", WhatToValidate: "body" }),
 	signup
 );
 
@@ -51,7 +51,7 @@ router.post("/google", continueWithGoogle);
 
 router.post(
 	"/login",
-	jsonValidator.validate({ schemaName: "login", WhatToValidate: ["body"] }),
+	jsonValidator.validate({ schemaName: "login", WhatToValidate: "body" }),
 	login
 );
 

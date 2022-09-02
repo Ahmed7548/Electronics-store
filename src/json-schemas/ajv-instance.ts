@@ -5,6 +5,7 @@ import addFormats from "ajv-formats";
 import loginSchema from "./schemas/login.json"
 import signupSchema from "./schemas/signup.json"
 import contWithGoogleSchema from "./schemas/contWithGoogle.json"
+import getProductsSchema from "./schemas/get-products.json"
 
 // formats
 const strongPassword = new RegExp(
@@ -55,7 +56,8 @@ const ajv = new AJV({
   schemas: {
     login:loginSchema,
     "sign-up":signupSchema,
-    "continue-with-google":contWithGoogleSchema
+		"continue-with-google": contWithGoogleSchema,
+		"get-products" : getProductsSchema,
   },
 });
 

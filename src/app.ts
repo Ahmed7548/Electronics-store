@@ -4,6 +4,7 @@ dotenv.config({});
 console.log(process.env.PORT, "whyyy");
 import connectToDB from "./utils/dbConnection";
 import authRouter from "./routers/auth";
+import productRouter from "./routers/product"
 import cors from "cors";
 import { errorHandler } from "./middlewares/ErrorHandler";
 
@@ -12,8 +13,14 @@ const app = express();
 // middleware
 app.use(cors());
 app.use(express.urlencoded({ extended: true })), app.use(express.json());
+
+
+
 app.use("/auth", authRouter);
-console.log(__dirname.replace("build","public"))
+app.use("/prod", productRouter);
+
+
+
 app.use(express.static(__dirname.replace("build","public")))
 
 app.use(errorHandler);
