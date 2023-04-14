@@ -1,7 +1,8 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import { User } from "../models/User";
 import { OAuth2Client } from "google-auth-library";
-import { getImgUrl, deleteFile } from "../utils/utils";
+import { getImgUrl } from "../utils/helpers/getImage";
+import { deleteFile } from "../utils/helpers/deleteFile";
 import { createTokens } from "../utils/Token/createToken";
 import HttpError from "../Errors/HTTPError";
 
