@@ -6,6 +6,7 @@ import { validate } from "../middlewares/validator";
 import { signUpSchema } from "../json-schemas/schemas/signUp";
 import { loginSchema } from "../json-schemas/schemas/login";
 import { conWithGoogleSchema } from "../json-schemas/schemas/conWithGoogle";
+import catchAsycError from "../utils/helpers/catchAsycError";
 
 const multerStorage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -47,19 +48,19 @@ router.post(
 	"/signup",
 	upload.single("avatar"),
 	validate({ schema: signUpSchema, whatToValidate: "body" }),
-	signup
+	catchAsycError(signup)
 );
 
 router.post(
 	"/google",
 	validate({ schema: conWithGoogleSchema, whatToValidate: "body" }),
-	continueWithGoogle
+	catchAsycError(continueWithGoogle)
 );
 
 router.post(
 	"/login",
 	validate({ schema: loginSchema, whatToValidate: "body" }),
-	login
+	catchAsycError(login)
 );
 
 export default router;

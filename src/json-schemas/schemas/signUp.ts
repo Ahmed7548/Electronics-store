@@ -27,9 +27,9 @@ export const signUpSchema = z
 			.trim()
 			.email(),
 		password: z.string().trim().regex(formats.strongPassword),
-		confirmPassword: z.string().trim(),
+		confirmedPassword: z.string().trim(),
 	})
-	.refine((data) => data.password === data.confirmPassword, {
+	.refine((data) => data.password === data.confirmedPassword, {
 		message: "confirmed password and password are not matching",
   });
   
