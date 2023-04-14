@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import HttpError from "../Errors/HTTPError"
 import UnhandledError from "../Errors/UnhandledError";
+import z from "zod/lib";
+import { deleteFile } from "../utils/helpers/deleteFile";
 
 interface DublicationError {
   message: string;
@@ -26,6 +28,17 @@ export const errorHandler = (err:any,req:Request,res:Response,next:NextFunction)
     const message =`there is a doc with this ${Object.keys(duplicateError.keyValue)[0]}: ${Object.values(duplicateError.keyValue)[0]}`
     res.status(400).json({ message: message, dublicatKey: true })
     return 
+  }
+
+  if (err instanceof z.ZodError) {
+    res.status(400).json({ message: err.message, err })
+    if (req.file) {
+      deleteFile(req.file.path);
+    }
+    if (req.files &&  req.files instanceof Array&&req.files.length > 0 ) {
+      deleteFile(...req.files.map((file) => file.path));
+    }
+    return
   }
 
   if (err instanceof UnhandledError) {

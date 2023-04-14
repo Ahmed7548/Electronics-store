@@ -1,10 +1,12 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
+import { CustomRequestHandler } from "../types";
 import { User } from "../models/User";
 import { OAuth2Client } from "google-auth-library";
 import { getImgUrl } from "../utils/helpers/getImage";
 import { deleteFile } from "../utils/helpers/deleteFile";
 import { createTokens } from "../utils/Token/createToken";
 import HttpError from "../Errors/HTTPError";
+import catchAsycError from "../utils/helpers/catchAsycError";
 
 const client = new OAuth2Client(
 	process.env.GOOGLE_CLIENT_ID,
@@ -47,6 +49,7 @@ export const continueWithGoogle = async (
 		}
 		const user = await User.findOne({ googleId: profile.sub });
 
+		// if user already exist
 		if (user) {
 			const { accessToken, refreshToken } = createTokens({
 				data: { name: user.name, email: user.email },
@@ -63,6 +66,7 @@ export const continueWithGoogle = async (
 			});
 			return;
 		}
+		//else create new user
 		const newUser = new User({
 			email: profile.email,
 			name: { first: profile.given_name, family: profile.family_name },
@@ -121,7 +125,7 @@ export const signup = async (
 		res.status(200).json({ message: "user signed up successfully " });
 		return;
 	} catch (err) {
-		deleteFile(fileUrl);
+		deleteFile(`./public/${fileUrl}`);
 		next(err);
 	}
 };
