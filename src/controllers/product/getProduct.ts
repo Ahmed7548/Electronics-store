@@ -1,22 +1,17 @@
 import { Handler, NextFunction, Request, Response } from "express";
+import { AsyncCustomRequestHandler } from "../../types";
+import { GetProductsReq } from "../../json-schemas/schemas/getProduct";
 
-const getProduct = (
-	req: Request<{ id: string }>,
-	res: Response,
-	next: NextFunction
+const getProduct: AsyncCustomRequestHandler<any, { id: string }> = async (
+	req,
+	res,
+	next
 ) => {
 	const { id } = req.params;
 
-	try {
-		// find the product
-		res.send("product"+id);
-		// if no product send 404
-
-	} catch (err) {
-		// pass the err to the error handler
-		next(err);
-	}
+	// find the product
+	res.send("product" + id);
+	// if no product send throw HttpError with 404 status code
 };
 
-
-export default getProduct
+export default getProduct;

@@ -29,6 +29,7 @@ const upload = multer({
 			file.mimetype !== "image/jpeg" &&
 			file.mimetype !== "image/jpg"
 		) {
+			console.log("here")
 			callback(
 				new HttpError(
 					"please add file with either the extension of '.png', '.jpeg', or 'jpg'",

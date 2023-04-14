@@ -1,7 +1,7 @@
-import { NextFunction, Request, Response } from "express";
+import { ErrorRequestHandler, NextFunction, Request, Response } from "express";
 import HttpError from "../Errors/HTTPError"
 import UnhandledError from "../Errors/UnhandledError";
-import z from "zod/lib";
+import z from "zod";
 import { deleteFile } from "../utils/helpers/deleteFile";
 
 interface DublicationError {
@@ -16,17 +16,17 @@ interface DublicationError {
   index:number
 }
 
-export const errorHandler = (err:any,req:Request,res:Response,next:NextFunction) => {
-  // console.log(err)
+export const errorHandler:ErrorRequestHandler = (err:any,req:Request,res:Response,next:NextFunction) => {
+  console.log(err)
   if (err instanceof HttpError) {
-    res.status(err.status).json({message: err.message})
+    res.status(err.status).json({message: err.message,err})
     return
   }
 
   if (err.code && err.code === 11000) {
     const duplicateError=err as DublicationError
     const message =`there is a doc with this ${Object.keys(duplicateError.keyValue)[0]}: ${Object.values(duplicateError.keyValue)[0]}`
-    res.status(400).json({ message: message, dublicatKey: true })
+    res.status(400).json({ message: message, dublicatKey: true,err })
     return 
   }
 
@@ -44,5 +44,5 @@ export const errorHandler = (err:any,req:Request,res:Response,next:NextFunction)
   if (err instanceof UnhandledError) {
     throw err
   }
-  res.status(500).json ({message:err.message})
+  res.status(500).json ({message:err.message,err})
 }

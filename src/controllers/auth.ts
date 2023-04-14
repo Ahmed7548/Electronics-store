@@ -1,12 +1,10 @@
-import { NextFunction, Request, RequestHandler, Response } from "express";
-import { AsyncCustomRequestHandler, CustomRequestHandler } from "../types";
+import { NextFunction, Request, Response } from "express";
+import { AsyncCustomRequestHandler } from "../types";
 import { User } from "../models/User";
 import { OAuth2Client } from "google-auth-library";
 import { getImgUrl } from "../utils/helpers/getImage";
-import { deleteFile } from "../utils/helpers/deleteFile";
 import { createTokens } from "../utils/Token/createToken";
 import HttpError from "../Errors/HTTPError";
-import catchAsycError from "../utils/helpers/catchAsycError";
 import { ConWithGoogleReq } from "../json-schemas/schemas/conWithGoogle";
 import { SignUp } from "../json-schemas/schemas/signUp";
 import { Login } from "../json-schemas/schemas/login";
@@ -31,6 +29,8 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
 
 	const profile = ticket.getPayload();
 
+	console.log(profile);
+
 	if (!profile) {
 		throw new HttpError("the user was not found in the google Api", 404);
 	}
@@ -44,10 +44,7 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
 			refreshSecret: process.env.REFRESHSECRET,
 		});
 		res.status(200).json({
-			user: {
-				...user,
-				password: null,
-			},
+			user: Object.assign(user, { password: undefined }),
 			accessToken,
 			refreshToken,
 		});
@@ -67,10 +64,7 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
 		refreshSecret: process.env.REFRESHSECRET,
 	});
 	res.status(200).json({
-		user: {
-			...newUser,
-			password: null,
-		},
+		user: Object.assign(newUser, { password: undefined }),
 		accessToken: accessToken,
 		refreshToken: refreshToken,
 	});
@@ -85,6 +79,9 @@ export const signup: AsyncCustomRequestHandler<any, SignUp> = async (
 ) => {
 	const { email, first, family, password, confirmedPassword } = req.body;
 	const file = req.file;
+	if (!req.file) {
+		throw new HttpError("please add an image", 400);
+	}
 	const fileUrl = getImgUrl(file);
 	if (password.trim() !== confirmedPassword.trim()) {
 		throw new HttpError(
@@ -116,6 +113,7 @@ export const login: AsyncCustomRequestHandler<any, Login> = async (
 ) => {
 	const { email, password } = req.body;
 	const user = await User.findOne({ email: email });
+	// console.log(user)
 	if (!user) {
 		throw new HttpError(
 			"there is no user with this email please register",
@@ -135,12 +133,8 @@ export const login: AsyncCustomRequestHandler<any, Login> = async (
 		refreshSecret: process.env.REFRESHSECRET,
 	});
 	res.status(200).json({
-		user: {
-			...user,
-			password: null,
-		},
+		user: Object.assign(user, { password: undefined }),
 		accessToken: accessToken,
 		refreshToken: refreshToken,
 	});
-	res.send(user);
 };

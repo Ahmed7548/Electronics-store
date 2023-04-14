@@ -26,7 +26,7 @@ export const signUpSchema = z
 			})
 			.trim()
 			.email(),
-		password: z.string().trim().regex(formats.strongPassword),
+		password: z.string().trim(),
 		confirmedPassword: z.string().trim(),
 	})
 	.refine((data) => data.password === data.confirmedPassword, {

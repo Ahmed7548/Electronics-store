@@ -88,7 +88,12 @@ userSchema.method(
 );
 
 userSchema.pre("save", async function (next) {
-	const unHashedPasword: string = this.unHashedPasword as string;
+	const unHashedPasword = this.unHashedPasword;
+	// in case the user signing up with google the unHashedPassword would be undefined 
+	if (!unHashedPasword) {
+		next();
+		return;
+	}
 	const salt = await bcrypt.genSalt(10);
 	const hash = await bcrypt.hash(unHashedPasword, salt);
 	this.password = {

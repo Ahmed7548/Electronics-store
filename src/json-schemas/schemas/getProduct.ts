@@ -11,4 +11,4 @@ export const getProductSchema = z.object({
 });
 
 
-export type GetProductsbody=z.infer<typeof getProductSchema>
+export type GetProductsReq=z.infer<typeof getProductSchema>
