@@ -2,7 +2,10 @@ import { Router } from "express";
 import { continueWithGoogle, login, signup } from "../controllers/auth";
 import multer from "multer";
 import HttpError from "../Errors/HTTPError";
-import { jsonValidator } from "../middlewares/jsonSchemaValidator";
+import { validate } from "../middlewares/validator";
+import { signUpSchema } from "../json-schemas/schemas/signUp";
+import { loginSchema } from "../json-schemas/schemas/login";
+import { conWithGoogleSchema } from "../json-schemas/schemas/conWithGoogle";
 
 const multerStorage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -43,15 +46,19 @@ const router = Router();
 router.post(
 	"/signup",
 	upload.single("avatar"),
-	jsonValidator.validate({ schemaName: "sign-up", WhatToValidate: "body" }),
+	validate({ schema: signUpSchema, whatToValidate: "body" }),
 	signup
 );
 
-router.post("/google", continueWithGoogle);
+router.post(
+	"/google",
+	validate({ schema: conWithGoogleSchema, whatToValidate: "body" }),
+	continueWithGoogle
+);
 
 router.post(
 	"/login",
-	jsonValidator.validate({ schemaName: "login", WhatToValidate: "body" }),
+	validate({ schema: loginSchema, whatToValidate: "body" }),
 	login
 );
 
