@@ -1,7 +1,8 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import { User } from "../models/User";
 import { OAuth2Client } from "google-auth-library";
-import { createTokens, getImgUrl, deleteFile } from "../utils/utils";
+import { getImgUrl, deleteFile } from "../utils/utils";
+import { createTokens } from "../utils/Token/createToken";
 import HttpError from "../Errors/HTTPError";
 
 const client = new OAuth2Client(
@@ -46,7 +47,11 @@ export const continueWithGoogle = async (
 		const user = await User.findOne({ googleId: profile.sub });
 
 		if (user) {
-			const { accessToken, refreshToken } = createTokens(user.name, user.email);
+			const { accessToken, refreshToken } = createTokens({
+				data: { name: user.name, email: user.email },
+				accessSecret: process.env.SECRET,
+				refreshSecret: process.env.REFRESHSECRET,
+			});
 			res.status(200).json({
 				user: {
 					...user,
@@ -64,10 +69,11 @@ export const continueWithGoogle = async (
 			imageUrl: profile.picture,
 		});
 		await newUser.save();
-		const { accessToken, refreshToken } = createTokens(
-			newUser.name,
-			newUser.email
-		);
+		const { accessToken, refreshToken } = createTokens({
+			data: { name: newUser.name, email: newUser.email },
+			accessSecret: process.env.SECRET,
+			refreshSecret: process.env.REFRESHSECRET,
+		});
 		res.status(200).json({
 			user: {
 				...newUser,
@@ -82,10 +88,6 @@ export const continueWithGoogle = async (
 		res.status(500).send({ err: err });
 	}
 };
-
-
-
-
 
 /* signing up with regular email */
 export const signup = async (
@@ -123,9 +125,6 @@ export const signup = async (
 	}
 };
 
-
-
-
 /* loging in */
 export const login: RequestHandler<never, any, Login> = async (
 	req,
@@ -148,7 +147,11 @@ export const login: RequestHandler<never, any, Login> = async (
 				401
 			);
 		}
-		const { accessToken, refreshToken } = createTokens(user.name, user.email);
+		const { accessToken, refreshToken } = createTokens({
+			data: { name: user.name, email: user.email },
+			accessSecret: process.env.SECRET,
+			refreshSecret: process.env.REFRESHSECRET,
+		});
 		res.status(200).json({
 			user: {
 				...user,

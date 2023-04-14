@@ -1,29 +1,6 @@
 import fs from "fs";
-import { sign } from "jsonwebtoken";
 
-export const createTokens = (
-	name: {
-		first: string;
-		family: string;
-	},
-	email: string
-): {
-	accessToken: string;
-	refreshToken: string;
-} => {
-	const accessToken = sign(
-		{ name: name, email: email },
-		process.env.SECRET as string,
-		{ expiresIn: 60 * 10, noTimestamp: false }
-	);
-	const refreshToken = sign(
-		{ name: name, email: email },
-		process.env.REFRESHSECRET as string,
-		{ expiresIn: "1 days", noTimestamp: false }
-	);
-
-	return { refreshToken, accessToken };
-};
+// there is a better way to improve this by adding an options parameter 
 
 export const getImgUrl = (file: Express.Multer.File | undefined): string => {
 	if (!file) return "";

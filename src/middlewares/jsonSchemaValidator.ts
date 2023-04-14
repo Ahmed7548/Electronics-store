@@ -19,9 +19,7 @@ class JsonValidator {
 		WhatToValidate: QueryData;
 	}) {
 		const validateFunction = this.ajv.getSchema(schemaName);
-		return (req: Request<any,any,any,any>, res: Response, next: NextFunction) => {
-	
-
+		return (req: Request, res: Response, next: NextFunction) => {
 			if (!validateFunction) {
 				throw new Error("schema doesn't exist");
 			}
@@ -30,7 +28,7 @@ class JsonValidator {
 				if (req.file) {
 					this.deleteFile(req.file.path);
 				}
-				if (req.files && req.files.length > 0 && req.files instanceof Array) {
+				if (req.files &&  req.files instanceof Array&&req.files.length > 0 ) {
 					this.deleteFile(...req.files.map((file) => file.path));
 				}
 				const errors = validateFunction.errors;
