@@ -1,4 +1,4 @@
-import { Schema, model, Document, Model } from "mongoose";
+import { Schema, model, Model } from "mongoose";
 import bcrypt from "bcrypt";
 const ObjectID = Schema.Types.ObjectId;
 interface UserProps {
@@ -25,7 +25,7 @@ interface UserMethods {
 
 type UserModel = Model<UserProps, {}, UserMethods>;
 
-const userSchema = new Schema<UserProps, UserModel, UserMethods>(
+const userSchema = new Schema<UserProps>(
 	{
 		name: {
 			first: {
@@ -67,24 +67,13 @@ const userSchema = new Schema<UserProps, UserModel, UserMethods>(
 			},
 		],
 	},
-	{ autoCreate: true, autoIndex: true }
-);
-
-// userSchema.methods.comparePassword(async function (
-// 	password: string
-// ): Promise<boolean> {
-// 	if (typeof this.password === "string") return false;
-// 	if (!this.password?.hash) return false;
-// 	return await bcrypt.compare(password, this.password?.hash);
-// });
-
-userSchema.method(
-	"comparePassword",
-	async function (password: string): Promise<boolean> {
+	{ methods:{
+		async comparePassword(password: string): Promise<boolean> {
 		if (typeof this.password === "string") return false;
 		if (!this.password?.hash) return false;
 		return await bcrypt.compare(password, this.password?.hash);
 	}
+	},autoCreate: true, autoIndex: true }
 );
 
 userSchema.pre("save", async function (next) {
