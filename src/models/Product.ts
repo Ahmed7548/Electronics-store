@@ -24,7 +24,12 @@ interface Product {
 	tags: string[];
 }
 
-interface ProductQueryHelpers {}
+interface ProductQueryHelpers {
+	paginate: <T>(this: T, page: number, records: number) => T;
+	byCategory: <T>(this: T, id: mongoose.Types.ObjectId | string) => T;
+	byName: <T>(this: T, name: string) => T;
+	byPrice: <T>(this: T, gt: number, lt: number) => T;
+}
 interface ProductMethods {}
 
 type ProductModel = Model<Product, ProductQueryHelpers, ProductMethods>;
@@ -44,18 +49,16 @@ const productSchema = new Schema<Product, ProductModel, ProductMethods>(
 		price: {
 			price: {
 				type: Number,
-				required: true,
 			},
 			currency: {
 				type: Number,
 				default: "LE",
 			},
-			required: true,
 		},
 		categories: [
 			{
-				id: {
-					type: ObjectID,
+				_id: {
+					type: String,
 				},
 				name: String,
 			},
@@ -76,16 +79,34 @@ const productSchema = new Schema<Product, ProductModel, ProductMethods>(
 		images: {
 			thumbnail: String,
 			images: [String],
-			required: true,
 		},
 		tags: {
 			type: [String],
-			required: true,
 		},
 	},
 	{
 		methods: {},
 		statics: {},
+		query: {
+			paginate(page: number, records: number) {
+				const skipped = (page - 1) * records;
+				return this.skip(skipped).limit(records);
+			},
+			byCategory(id: mongoose.Types.ObjectId | string) {
+				return this.where("categories._id").equals(id);
+			},
+			byName(name: string) {
+				return this.or([
+					{ name: { $regex: `${name}`, $options: "i" } },
+					{ describtion: { $regex: `${name}`, $options: "i" } },
+					{ tags: { $regex: `${name}`, $options: "i" } },
+					{ SKU: { $regex: `${name}`, $options: "i" } },
+				]);
+			},
+			byPrice(gt: number, lt: number) {
+				return this.where("price.price").gte(gt).lte(lt);
+			},
+		},
 	}
 );
 
