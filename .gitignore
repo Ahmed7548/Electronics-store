@@ -4,3 +4,4 @@
 **/.env
 **/public
 test.ts
+product.json

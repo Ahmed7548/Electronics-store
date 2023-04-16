@@ -1,4 +1,5 @@
 import mongoose, { Schema, model, Model } from "mongoose";
+import { boolean } from "zod";
 const ObjectID = Schema.Types.ObjectId;
 
 interface Product {
@@ -12,6 +13,10 @@ interface Product {
 		type: "VALUE" | "PERCENT";
 		discount: number;
 	};
+	stock: {
+		qtyInStock: number;
+		qtySold: number;
+	};
 	images: {
 		thumbnail: string;
 		images: string[];
@@ -19,16 +24,17 @@ interface Product {
 	describtion: string;
 	categories: {
 		id: mongoose.Types.ObjectId;
-		name: string;
+		name: String;
 	}[];
-	tags: string[];
+  tags: string[];
+  forSale:boolean
 }
 
 interface ProductQueryHelpers {
-	paginate: <T>(this: T, page: number, records: number) => T;
+	paginate: <T>(this: T, options: { page: number; records: number }) => T;
 	byCategory: <T>(this: T, id: mongoose.Types.ObjectId | string) => T;
-	byName: <T>(this: T, name: string) => T;
-	byPrice: <T>(this: T, gt: number, lt: number) => T;
+	bySearch: <T>(this: T, name: string) => T;
+	byPrice: <T>(this: T, options: { gt?: number; lt?: number }) => T;
 }
 interface ProductMethods {}
 
@@ -53,6 +59,16 @@ const productSchema = new Schema<Product, ProductModel, ProductMethods>(
 			currency: {
 				type: Number,
 				default: "LE",
+			},
+		},
+		stock: {
+			qtyInStock: {
+				type: Number,
+				default: 0,
+			},
+			qtySold: {
+				type: Number,
+				default: 0,
 			},
 		},
 		categories: [
@@ -82,29 +98,40 @@ const productSchema = new Schema<Product, ProductModel, ProductMethods>(
 		},
 		tags: {
 			type: [String],
-		},
+    },
+    forSale: {
+      type: Boolean,
+      default:true
+    }
 	},
 	{
 		methods: {},
 		statics: {},
 		query: {
-			paginate(page: number, records: number) {
+			paginate({ page, records }: { page: number; records: number }) {
 				const skipped = (page - 1) * records;
 				return this.skip(skipped).limit(records);
 			},
 			byCategory(id: mongoose.Types.ObjectId | string) {
 				return this.where("categories._id").equals(id);
 			},
-			byName(name: string) {
+			bySearch(search: string) {
 				return this.or([
-					{ name: { $regex: `${name}`, $options: "i" } },
-					{ describtion: { $regex: `${name}`, $options: "i" } },
-					{ tags: { $regex: `${name}`, $options: "i" } },
-					{ SKU: { $regex: `${name}`, $options: "i" } },
+					{ name: { $regex: `${search}`, $options: "i" } },
+					{ describtion: { $regex: `${search}`, $options: "i" } },
+					{ tags: { $regex: `${search}`, $options: "i" } },
+					{ SKU: { $regex: `${search}`, $options: "i" } },
 				]);
 			},
-			byPrice(gt: number, lt: number) {
-				return this.where("price.price").gte(gt).lte(lt);
+			byPrice({ gt, lt }: { gt?: number; lt?: number }) {
+				const query = this.where("price.price");
+				if (gt) {
+					query.gte(gt);
+				}
+				if (lt) {
+					query.lt(lt);
+				}
+				return query;
 			},
 		},
 	}
