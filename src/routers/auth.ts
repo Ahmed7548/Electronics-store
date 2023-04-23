@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { continueWithGoogle, login, signup } from "../controllers/auth";
+import { continueWithGoogle, login, signup } from "../controllers/auth/auth";
 import multer from "multer";
 import HttpError from "../Errors/HTTPError";
 import { validate } from "../middlewares/validator";
@@ -29,7 +29,7 @@ const upload = multer({
 			file.mimetype !== "image/jpeg" &&
 			file.mimetype !== "image/jpg"
 		) {
-			console.log("here")
+			console.log("here");
 			callback(
 				new HttpError(
 					"please add file with either the extension of '.png', '.jpeg', or 'jpg'",

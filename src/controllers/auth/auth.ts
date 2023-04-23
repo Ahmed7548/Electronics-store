@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
-import { AsyncCustomRequestHandler } from "../types";
-import { User } from "../models/User";
+import { AsyncCustomRequestHandler } from "../../types";
+import { User } from "../../models/User";
 import { OAuth2Client } from "google-auth-library";
-import { getImgUrl } from "../utils/helpers/getImage";
-import { createTokens } from "../utils/Token/createToken";
-import HttpError from "../Errors/HTTPError";
-import { ConWithGoogleReq } from "../json-schemas/schemas/conWithGoogle";
-import { SignUp } from "../json-schemas/schemas/signUp";
-import { Login } from "../json-schemas/schemas/login";
+import { getImgUrl } from "../../utils/helpers/getImage";
+import { createTokens } from "../../utils/Token/createToken";
+import HttpError from "../../Errors/HTTPError";
+import { ConWithGoogleReq } from "../../json-schemas/schemas/conWithGoogle";
+import { SignUp } from "../../json-schemas/schemas/signUp";
+import { Login } from "../../json-schemas/schemas/login";
 
 const client = new OAuth2Client(
 	process.env.GOOGLE_CLIENT_ID,

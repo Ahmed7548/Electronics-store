@@ -1,4 +1,3 @@
-import { Handler, NextFunction, Request, Response } from "express";
 import { AsyncCustomRequestHandler } from "../../types";
 import { GetProductsReq } from "../../json-schemas/schemas/getProducts";
 import { Product } from "../../models/Product";
