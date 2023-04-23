@@ -1,34 +1,48 @@
-import { CorsRequest } from "cors";
-import { Request, Response, NextFunction, RequestHandler } from "express";
-import HttpError from "../../Errors/HTTPError";
 import { AsyncCustomRequestHandler } from "../../types";
-import { GetProductsReq } from "../../json-schemas/schemas/getProduct";
+import { GetProductsReq } from "../../json-schemas/schemas/getProducts";
+import { Product } from "../../models/Product";
 
 // price range --> from,to  --->const [from,to] split(",")
 
 // get the category id and searching with the category id
 
-
-
-
-const getProducts:AsyncCustomRequestHandler<any,GetProductsReq>  =async (
+const getProducts: AsyncCustomRequestHandler<any, GetProductsReq> = async (
 	req,
 	res,
-	next,
+	next
 ) => {
 	const { category, search, from_price, to_price, page, item_per_page } =
 		req.body;
-
 	// the query
+	// could filter the products out of stock
+	const query = Product.find(
+		{ forSale: true },
+		{
+			_id: 1,
+			describtion: 1,
+			SKU: 1,
+			price: 1,
+			name: 1,
+			discount: 1,
+			"images.thumbnail": 1,
+		}
+	);
+	if (category) {
+		query.byCategory(category);
+	}
+	if (search) {
+		query.bySearch(search);
+	}
 
-	//check every item to form the query
+	if (from_price || to_price) {
+		query.byPrice({ gt: from_price, lt: to_price });
+	}
 
-	res.send(req.body);
+	query.paginate({ page: page || 0, records: item_per_page || 10 });
 
-		//await the query and store the data in a const
-		// check if data is empty--> and if so res with 404
-		//res with the data
-	
+	const documents = await query;
+
+	res.status(200).json({ docNum: documents.length, documents });
 };
 
 export default getProducts;
