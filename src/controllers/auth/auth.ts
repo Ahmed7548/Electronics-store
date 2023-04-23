@@ -39,7 +39,7 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
 	// if user already exist
 	if (user) {
 		const { accessToken, refreshToken } = createTokens({
-			data: { name: user.name, email: user.email },
+			data: { name: user.name, email: user.email,verified:user.verified },
 			accessSecret: process.env.SECRET,
 			refreshSecret: process.env.REFRESHSECRET,
 		});
@@ -56,10 +56,11 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
 		name: { first: profile.given_name, family: profile.family_name },
 		googleId: profile.sub,
 		imageUrl: profile.picture,
+		verified:true
 	});
 	await newUser.save();
 	const { accessToken, refreshToken } = createTokens({
-		data: { name: newUser.name, email: newUser.email },
+		data: { name: newUser.name, email: newUser.email,verified:newUser.verified },
 		accessSecret: process.env.SECRET,
 		refreshSecret: process.env.REFRESHSECRET,
 	});
@@ -128,7 +129,7 @@ export const login: AsyncCustomRequestHandler<any, Login> = async (
 		);
 	}
 	const { accessToken, refreshToken } = createTokens({
-		data: { name: user.name, email: user.email },
+		data: { name: user.name, email: user.email,verified:user.verified },
 		accessSecret: process.env.SECRET,
 		refreshSecret: process.env.REFRESHSECRET,
 	});
