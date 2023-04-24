@@ -1,8 +1,7 @@
-import { Handler, NextFunction, Request, Response } from "express";
-import { AsyncCustomRequestHandler } from "../../types";
-import { GetProductsReq } from "../../json-schemas/schemas/getProducts";
-import { Product } from "../../models/Product";
-import HttpError from "../../Errors/HTTPError";
+import type { AsyncCustomRequestHandler } from "../../types/index.js";
+import { GetProductsReq } from "../../json-schemas/schemas/getProducts.js";
+import { Product } from "../../models/Product.js";
+import HttpError from "../../Errors/HTTPError.js";
 
 const getProduct: AsyncCustomRequestHandler<any, { id: string }> = async (
 	req,

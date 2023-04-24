@@ -14,11 +14,13 @@ export type ResType<T> = T | ErrorResponse;
 export type CustomRequestHandler<
 	ResBody = any,
 	ReqBody = any,
-	ReqQuery = any
-> = RequestHandler<any, ResType<ResBody>, ReqBody, ReqQuery>;
+	ReqQuery = any,
+	ReqParams = any
+> = RequestHandler<ReqParams, ResType<ResBody>, ReqBody, ReqQuery>;
 
 export type AsyncCustomRequestHandler<
 	ResBody = any,
 	ReqBody = any,
-	ReqQuery = any
-> = Promisfy<RequestHandler<any, ResType<ResBody>, ReqBody, ReqQuery>>;
+	ReqQuery = any,
+	ReqParams = any
+> = Promisfy<RequestHandler<ReqParams, ResType<ResBody>, ReqBody, ReqQuery>>;

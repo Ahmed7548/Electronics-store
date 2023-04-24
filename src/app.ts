@@ -1,13 +1,19 @@
 import express from "express";
 import * as dotenv from "dotenv";
+import { fileURLToPath } from "url"
+import path from "path";
 dotenv.config({});
-import connectToDB from "./utils/db/dbConnection";
-import authRouter from "./routers/auth";
-import productRouter from "./routers/product";
+import connectToDB from "./utils/db/dbConnection.js";
+import authRouter from "./routers/auth.js";
+import productRouter from "./routers/product.js";
 import cors from "cors";
-import { errorHandler } from "./middlewares/ErrorHandler";
+import { errorHandler } from "./middlewares/ErrorHandler.js";
 
 const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+
+const __dirname = path.dirname(__filename);
 
 // middleware
 app.use(cors());
