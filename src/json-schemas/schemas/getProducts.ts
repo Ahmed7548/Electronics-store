@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { formats } from "../regex/regex";
+import { formats } from "../regex/regex.js";
 
 export const getProductsSchema = z.object({
 	search: z.string().optional(),

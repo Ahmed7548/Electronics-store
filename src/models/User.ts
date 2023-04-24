@@ -1,5 +1,7 @@
-import { Schema, model, Model } from "mongoose";
+import { Schema, model, Model, Document } from "mongoose";
 import bcrypt from "bcrypt";
+import { verify } from "jsonwebtoken";
+import HttpError from "../Errors/HTTPError.js";
 const ObjectID = Schema.Types.ObjectId;
 interface UserProps {
 	name: {
@@ -16,6 +18,8 @@ interface UserProps {
 				hash: string;
 				salt: string;
 		  };
+	verified: boolean;
+	verificationToken: string;
 	orders: [];
 }
 
@@ -23,7 +27,13 @@ interface UserMethods {
 	comparePassword: (password: string) => Promise<boolean>;
 }
 
-type UserModel = Model<UserProps, {}, UserMethods>;
+interface UserModel extends Model<UserProps, {}, UserMethods> {
+	verify: (
+		this: UserModel,
+		id: string,
+		verificationCode: string
+	) => Promise<Document<any, any, UserModel> | null>;
+}
 
 const userSchema = new Schema<UserProps>(
 	{
@@ -60,6 +70,13 @@ const userSchema = new Schema<UserProps>(
 			type: String,
 			index: true,
 		},
+		verified: {
+			type: Boolean,
+			default: false,
+		},
+		verificationToken: {
+			type: String,
+		},
 		orders: [
 			{
 				type: ObjectID,
@@ -67,18 +84,37 @@ const userSchema = new Schema<UserProps>(
 			},
 		],
 	},
-	{ methods:{
-		async comparePassword(password: string): Promise<boolean> {
-		if (typeof this.password === "string") return false;
-		if (!this.password?.hash) return false;
-		return await bcrypt.compare(password, this.password?.hash);
+	{
+		methods: {
+			async comparePassword(password: string): Promise<boolean> {
+				if (typeof this.password === "string") return false;
+				if (!this.password?.hash) return false;
+				return await bcrypt.compare(password, this.password?.hash);
+			},
+		},
+		statics: {
+			async verify(
+				id: string,
+				verificationCode: string
+			): Promise<Document<any, any, UserModel> | null> {
+				const user = await this.findById(id);
+				if(!user) throw new HttpError("there is no user with that id",404)
+				if (user.verified) {
+					throw new HttpError("this user is already verified",400)
+				}
+				user.verified = true
+				const result=await user.save()
+				return result
+			},
+		},
+		autoCreate: true,
+		autoIndex: true,
 	}
-	},autoCreate: true, autoIndex: true }
 );
 
 userSchema.pre("save", async function (next) {
 	const unHashedPasword = this.unHashedPasword;
-	// in case the user signing up with google the unHashedPassword would be undefined 
+	// in case the user signing up with google the unHashedPassword would be undefined
 	if (!unHashedPasword) {
 		next();
 		return;

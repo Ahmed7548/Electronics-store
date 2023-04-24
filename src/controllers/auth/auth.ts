@@ -1,13 +1,15 @@
 import { NextFunction, Request, Response } from "express";
-import { AsyncCustomRequestHandler } from "../../types";
-import { User } from "../../models/User";
+import type { AsyncCustomRequestHandler } from "../../types/index.js";
+import { User } from "../../models/User.js";
 import { OAuth2Client } from "google-auth-library";
-import { getImgUrl } from "../../utils/helpers/getImage";
-import { createTokens } from "../../utils/Token/createToken";
-import HttpError from "../../Errors/HTTPError";
-import { ConWithGoogleReq } from "../../json-schemas/schemas/conWithGoogle";
-import { SignUp } from "../../json-schemas/schemas/signUp";
-import { Login } from "../../json-schemas/schemas/login";
+import { getImgUrl } from "../../utils/helpers/getImage.js";
+import { createTokens } from "../../utils/Token/createToken.js";
+import HttpError from "../../Errors/HTTPError.js";
+import { ConWithGoogleReq } from "../../json-schemas/schemas/conWithGoogle.js";
+import { SignUp } from "../../json-schemas/schemas/signUp.js";
+import { Login } from "../../json-schemas/schemas/login.js";
+
+import createTransporter from "../../utils/mailer/transporter.js";
 
 const client = new OAuth2Client(
 	process.env.GOOGLE_CLIENT_ID,
@@ -39,7 +41,7 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
 	// if user already exist
 	if (user) {
 		const { accessToken, refreshToken } = createTokens({
-			data: { name: user.name, email: user.email,verified:user.verified },
+			data: { name: user.name, email: user.email, verified: user.verified },
 			accessSecret: process.env.SECRET,
 			refreshSecret: process.env.REFRESHSECRET,
 		});
@@ -56,11 +58,15 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
 		name: { first: profile.given_name, family: profile.family_name },
 		googleId: profile.sub,
 		imageUrl: profile.picture,
-		verified:true
+		verified: true,
 	});
 	await newUser.save();
 	const { accessToken, refreshToken } = createTokens({
-		data: { name: newUser.name, email: newUser.email,verified:newUser.verified },
+		data: {
+			name: newUser.name,
+			email: newUser.email,
+			verified: newUser.verified,
+		},
 		accessSecret: process.env.SECRET,
 		refreshSecret: process.env.REFRESHSECRET,
 	});
@@ -90,6 +96,10 @@ export const signup: AsyncCustomRequestHandler<any, SignUp> = async (
 			400
 		);
 	}
+
+	const veriviationCode = Math.floor(
+		Math.random() * 10000 * Date.now()
+	).toString(16);
 	const user = new User({
 		email: email,
 		name: {
@@ -98,7 +108,19 @@ export const signup: AsyncCustomRequestHandler<any, SignUp> = async (
 		},
 		imageUrl: fileUrl,
 		unHashedPasword: password,
+		verificationToken: veriviationCode,
 	});
+
+	const transporter = await createTransporter();
+
+	const info = await transporter.sendMail({
+		from: '"Fred Foo 👻" <foo@example.com>', // sender address
+		to: user.email, // list of receivers
+		subject: "Hello ✔", // Subject line
+		text: "Hello world?", // plain text body
+		html: "<b>Hello world?</b>", // html body
+	});
+	console.log(info);
 
 	await user.save();
 
@@ -129,7 +151,7 @@ export const login: AsyncCustomRequestHandler<any, Login> = async (
 		);
 	}
 	const { accessToken, refreshToken } = createTokens({
-		data: { name: user.name, email: user.email,verified:user.verified },
+		data: { name: user.name, email: user.email, verified: user.verified },
 		accessSecret: process.env.SECRET,
 		refreshSecret: process.env.REFRESHSECRET,
 	});
