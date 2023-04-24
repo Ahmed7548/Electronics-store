@@ -1,5 +1,7 @@
-import { sign } from "jsonwebtoken";
-import UnhandledError from "../../Errors/UnhandledError";
+import * as jwt from "jsonwebtoken";
+import UnhandledError from "../../Errors/UnhandledError.js";
+
+const {sign}=jwt
 
 interface TokenObject {
 	accessToken: string;

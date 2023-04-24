@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { continueWithGoogle, login, signup } from "../controllers/auth/auth";
+import { continueWithGoogle, login, signup } from "../controllers/auth/auth.js";
 import multer from "multer";
-import HttpError from "../Errors/HTTPError";
-import { validate } from "../middlewares/validator";
-import { signUpSchema } from "../json-schemas/schemas/signUp";
-import { loginSchema } from "../json-schemas/schemas/login";
-import { conWithGoogleSchema } from "../json-schemas/schemas/conWithGoogle";
-import catchAsycError from "../utils/helpers/catchAsycError";
+import HttpError from "../Errors/HTTPError.js";
+import { validate } from "../middlewares/validator.js";
+import { signUpSchema } from "../json-schemas/schemas/signUp.js";
+import { loginSchema } from "../json-schemas/schemas/login.js";
+import { conWithGoogleSchema } from "../json-schemas/schemas/conWithGoogle.js";
+import catchAsycError from "../utils/helpers/catchAsycError.js";
+import { verifyUserEmail } from "../controllers/auth/verifyUserEmail.js";
 
 const multerStorage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -63,5 +64,8 @@ router.post(
 	validate({ schema: loginSchema, whatToValidate: "body" }),
 	catchAsycError(login)
 );
+
+
+router.post("/verify/:id",catchAsycError(verifyUserEmail))
 
 export default router;

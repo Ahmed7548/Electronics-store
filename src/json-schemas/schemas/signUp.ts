@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { formats } from "../regex/regex";
 
 export const signUpSchema = z
 	.object({

@@ -1,8 +1,8 @@
 import { RequestHandler } from "express";
 
-import { Promisfy } from "../../types";
+import type { AsyncCustomRequestHandler, Promisfy } from "../../types/index.js";
 
-export default <T extends Promisfy<RequestHandler>>(
+export default <T extends AsyncCustomRequestHandler>(
 	asyncfn: T
 ): RequestHandler => {
 	return (req, res, next) => {

@@ -1,8 +1,8 @@
 import { ErrorRequestHandler, NextFunction, Request, Response } from "express";
-import HttpError from "../Errors/HTTPError"
-import UnhandledError from "../Errors/UnhandledError";
+import HttpError from "../Errors/HTTPError.js"
+import UnhandledError from "../Errors/UnhandledError.js";
 import z from "zod";
-import { deleteFile } from "../utils/helpers/deleteFile";
+import { deleteFile } from "../utils/helpers/deleteFile.js";
 
 interface DublicationError {
   message: string;

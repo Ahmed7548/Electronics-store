@@ -1,6 +1,6 @@
-import { AsyncCustomRequestHandler } from "../../types";
-import { GetProductsReq } from "../../json-schemas/schemas/getProducts";
-import { Product } from "../../models/Product";
+import type { AsyncCustomRequestHandler } from "../../types/index.js";
+import type { GetProductsReq } from "../../json-schemas/schemas/getProducts.js";
+import { Product } from "../../models/Product.js";
 
 // price range --> from,to  --->const [from,to] split(",")
 
