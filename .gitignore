@@ -1,6 +1,5 @@
 **/node_modules/
 **/build/
-*?config.json
 **/.env
 **/public
 test.ts

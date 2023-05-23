@@ -18,6 +18,14 @@ interface DublicationError {
 
 export const errorHandler:ErrorRequestHandler = (err:any,req:Request,res:Response,next:NextFunction) => {
   console.log(err)
+
+  if (req.file) {
+    deleteFile(req.file.path);
+  }
+  if (req.files &&  req.files instanceof Array&&req.files.length > 0 ) {
+    deleteFile(...req.files.map((file) => file.path));
+  }
+
   if (err instanceof HttpError) {
     res.status(err.status).json({message: err.message,err})
     return
@@ -32,12 +40,6 @@ export const errorHandler:ErrorRequestHandler = (err:any,req:Request,res:Respons
 
   if (err instanceof z.ZodError) {
     res.status(400).json({ message: err.message, err })
-    if (req.file) {
-      deleteFile(req.file.path);
-    }
-    if (req.files &&  req.files instanceof Array&&req.files.length > 0 ) {
-      deleteFile(...req.files.map((file) => file.path));
-    }
     return
   }
 

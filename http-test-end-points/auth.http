@@ -1,0 +1,20 @@
+@host =http://localhost:3000
+
+
+
+
+GET {{host}}
+
+
+
+
+
+######
+
+
+POST {{host}}/auth/signup
+Content-Type: "multipart/form-data"
+
+{
+
+}
