@@ -119,7 +119,7 @@ export const signup: AsyncCustomRequestHandler<any, SignUp> = async (
 	
 	res.status(200).json({ message: "user signed up successfully " });
 
-	const html=createMailhtml(`http://localhost`)
+	const html=createMailhtml(`${process.env.URL}/${user.id}/${user.verificationToken}`)
 
 	const info = await transporter.sendMail({
 		from: "abe.lockman34@ethereal.email", // sender address

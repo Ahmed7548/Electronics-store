@@ -11,14 +11,17 @@ import { errorHandler } from "./middlewares/ErrorHandler.js";
 
 const app = express();
 
-const __filename = fileURLToPath(import.meta.url);
-
-const __dirname = path.dirname(__filename);
 
 // middleware
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+
+//test working
+app.get("/",(req,res,next)=>{
+	res.send("working")
+})
 
 app.use("/auth", authRouter);
 app.use("/prod", productRouter);

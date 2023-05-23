@@ -1,9 +1,6 @@
 **/node_modules/
 **/build/
-*?config.json
 **/.env
 **/public
 test.ts
 product.json
-**/http/
-*.http
