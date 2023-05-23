@@ -10,6 +10,7 @@ import { SignUp } from "../../json-schemas/schemas/signUp.js";
 import { Login } from "../../json-schemas/schemas/login.js";
 
 import createTransporter from "../../utils/mailer/transporter.js";
+import createMailhtml from "../../utils/mailer/createMailhtml.js";
 
 const client = new OAuth2Client(
 	process.env.GOOGLE_CLIENT_ID,
@@ -113,18 +114,20 @@ export const signup: AsyncCustomRequestHandler<any, SignUp> = async (
 
 	const transporter = await createTransporter();
 
+	
+	await user.save();
+	
+	res.status(200).json({ message: "user signed up successfully " });
+
+	const html=createMailhtml(`http://localhost`)
+
 	const info = await transporter.sendMail({
-		from: '"Fred Foo 👻" <foo@example.com>', // sender address
+		from: "abe.lockman34@ethereal.email", // sender address
 		to: user.email, // list of receivers
-		subject: "Hello ✔", // Subject line
-		text: "Hello world?", // plain text body
-		html: "<b>Hello world?</b>", // html body
+		subject: "Verificate Your Email", // Subject line
+		html: html // html body
 	});
 	console.log(info);
-
-	await user.save();
-
-	res.status(200).json({ message: "user signed up successfully " });
 	return;
 };
 
