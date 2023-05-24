@@ -102,9 +102,12 @@ const userSchema = new Schema<UserProps>(
 				if (user.verified) {
 					throw new HttpError("this user is already verified",400)
 				}
-				user.verified = true
-				const result=await user.save()
-				return result
+				if(user.verificationToken===verificationCode){
+					user.verified = true
+					const result=await user.save()
+					return result
+				}
+				throw new HttpError("the verification code is incorrect",401)
 			},
 		},
 		autoCreate: true,

@@ -114,20 +114,22 @@ export const signup: AsyncCustomRequestHandler<any, SignUp> = async (
 
 	const transporter = await createTransporter();
 
+	const html=createMailhtml(`${process.env.URL}/${user.id}/${user.verificationToken}`)
+	
 	
 	await user.save();
 	
-	res.status(200).json({ message: "user signed up successfully " });
-
-	const html=createMailhtml(`${process.env.URL}/${user.id}/${user.verificationToken}`)
-
-	const info = await transporter.sendMail({
-		from: "abe.lockman34@ethereal.email", // sender address
+	
+	
+	const sendMail = transporter.sendMail({
+		from: "laurine.grant51@ethereal.email", // sender address
 		to: user.email, // list of receivers
 		subject: "Verificate Your Email", // Subject line
 		html: html // html body
 	});
-	console.log(info);
+	await Promise.all([user.save(),sendMail])
+
+	res.status(200).json({ message: "user signed up successfully" });
 	return;
 };
 
