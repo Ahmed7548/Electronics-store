@@ -114,7 +114,7 @@ export const signup: AsyncCustomRequestHandler<any, SignUp> = async (
 
 	const transporter = await createTransporter();
 
-	const html=createMailhtml(`${process.env.URL}/${user.id}/${user.verificationToken}`)
+	const html=createMailhtml(`${process.env.URL}/auth/verify/${user.id}?verivicationCode=${user.verificationToken}`)
 	
 	
 	await user.save();

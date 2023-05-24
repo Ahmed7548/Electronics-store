@@ -66,6 +66,6 @@ router.post(
 );
 
 
-router.post("/verify/:id",catchAsycError(verifyUserEmail))
+router.get("/verify/:id",catchAsycError(verifyUserEmail))
 
 export default router;
