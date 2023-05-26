@@ -3,7 +3,7 @@ const ObjectID = Schema.Types.ObjectId;
 
 
 
-interface Category{
+export interface CategoryIn{
   name: string;
   images:{
     thumbnail:string;
@@ -16,7 +16,7 @@ interface Category{
 
 
 
-const categoriesSchema = new Schema<Category>({
+const categoriesSchema = new Schema<CategoryIn>({
   name:String,
   images:{
     thumbnail:String,
@@ -28,4 +28,4 @@ const categoriesSchema = new Schema<Category>({
 
 
 
-export const Category= model<Category>("Category",categoriesSchema)
+export const Category= model<CategoryIn>("Category",categoriesSchema)
