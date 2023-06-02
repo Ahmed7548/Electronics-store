@@ -1,6 +1,4 @@
 import mongoose, { Schema, model, Model, Document } from "mongoose";
-import { boolean } from "zod";
-const ObjectID = Schema.Types.ObjectId;
 
 interface Product {
   SKU: string;

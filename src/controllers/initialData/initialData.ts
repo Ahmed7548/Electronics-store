@@ -12,7 +12,7 @@ import { AsyncCustomRequestHandler } from "../../types";
 
 // get all the categories and promoted products and user specific products 
 // specific products is to be determined some time in the future
-const getInitialData:AsyncCustomRequestHandler<any,{userId:string|undefined}>=async (req,res,next)=>{
+export const getInitialData:AsyncCustomRequestHandler<any,{userId:string|undefined}>=async (req,res,next)=>{
     const {userId}=req.body
 
     const promotedProducts= Product.getPromated(10)
@@ -37,3 +37,5 @@ const getInitialData:AsyncCustomRequestHandler<any,{userId:string|undefined}>=as
         //get the categories and promoted products
     }
 }
+
+
