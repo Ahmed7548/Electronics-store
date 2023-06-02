@@ -22,4 +22,6 @@ router.get(
 	catchAsycError(getProducts)
 );
 
+
+
 export default router;
