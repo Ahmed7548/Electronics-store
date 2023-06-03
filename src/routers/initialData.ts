@@ -10,6 +10,7 @@ router.use(idintify)
 router.get(
   "/initialData",
   validate({ schema: initialDataShema, whatToValidate: "body" }),
+  catchAsycError(idintify),
   catchAsycError(getInitialData)
 );
 

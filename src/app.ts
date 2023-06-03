@@ -9,6 +9,7 @@ import productRouter from "./routers/product.js";
 import cors from "cors";
 import { errorHandler } from "./middlewares/ErrorHandler.js";
 import cookieParser from "cookie-parser";
+import initialDataRouter from "./routers/initialData.js"
 
 
 declare global {
@@ -45,6 +46,7 @@ app.get("/",(req,res,next)=>{
 	res.send("working")
 })
 
+app.use("/",initialDataRouter)
 app.use("/auth", authRouter);
 app.use("/prod", productRouter);
 
