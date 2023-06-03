@@ -39,7 +39,7 @@ interface ProductMethods {}
 
 interface ProductModel
   extends Model<Product, ProductQueryHelpers, ProductMethods> {
-  getPromated: (this:ProductModel,productsLimit:number) => Promise<Document<any, any, ProductModel>[] | null>;
+    getPromoted: (this:ProductModel,productsLimit:number) => Promise<Document<any, any, ProductModel>[] | null>;
 }
 
 const productSchema = new Schema<Product, ProductModel, ProductMethods>(
