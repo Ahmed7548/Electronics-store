@@ -32,7 +32,6 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
 
   const profile = ticket.getPayload();
 
-  console.log(profile);
 
   if (!profile) {
     throw new HttpError("the user was not found in the google Api", 404);
@@ -42,12 +41,17 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
   // if user already exist
   if (user) {
     const { accessToken, refreshToken } = createTokens({
-      data: { name: user.name, email: user.email,id:user.id, verified: user.verified },
+      data: {
+        name: user.name,
+        email: user.email,
+        id: user.id,
+        verified: user.verified,
+      },
       accessSecret: process.env.SECRET,
       refreshSecret: process.env.REFRESHSECRET,
     });
 
-    res.cookie("accessTocken", accessToken, {
+    res.cookie("accessToken", accessToken, {
       httpOnly: true,
       sameSite: "strict",
     });
@@ -82,6 +86,15 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
     },
     accessSecret: process.env.SECRET,
     refreshSecret: process.env.REFRESHSECRET,
+  });
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    sameSite: "strict",
+  });
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    sameSite: "strict",
+    path: "/auth/access",
   });
   res.status(200).json({
     user: Object.assign(newUser, { password: undefined }),
@@ -177,7 +190,7 @@ export const login: AsyncCustomRequestHandler<any, Login> = async (
     refreshSecret: process.env.REFRESHSECRET,
   });
 
-  res.cookie("accessTocken", accessToken, {
+  res.cookie("accessToken", accessToken, {
     httpOnly: true,
     sameSite: "strict",
   });
