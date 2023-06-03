@@ -1,6 +1,16 @@
+<<<<<<< HEAD
 **/node_modules/
 **/build/
 **/.env
 **/public
 test.ts
 product.json
+=======
+**/node_modules/
+**/build/
+**/.env
+**/public
+test.ts
+product.json
+**/test-data/
+>>>>>>> d14b9018711a8b32d57606d1a2439e7473237d2d
