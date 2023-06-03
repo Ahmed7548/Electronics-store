@@ -40,7 +40,7 @@ export const createTokens = ({
 		expiresIn: accessTokenExp,
 		noTimestamp: false,
 	});
-	const refreshToken = sign({ name: name, email: email,id,verified }, refreshSecret, {
+	const refreshToken = sign({ name: name, email: email,id:id,verified:verified }, refreshSecret, {
 		expiresIn: refreshTokenExp,
 		noTimestamp: false,
 	});

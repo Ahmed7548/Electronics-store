@@ -11,6 +11,7 @@ import { Login } from "../../json-schemas/schemas/login.js";
 
 import createTransporter from "../../utils/mailer/transporter.js";
 import createMailhtml from "../../utils/mailer/createMailhtml.js";
+import { setTokenToCookies } from "../../utils/Token/setTokensToCookies.js";
 
 const client = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID,
@@ -51,15 +52,7 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
       refreshSecret: process.env.REFRESHSECRET,
     });
 
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      sameSite: "strict",
-    });
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/auth/access",
-    });
+    setTokenToCookies(res,accessToken,refreshToken)
 
     res.status(200).json({
       user: Object.assign(user, { password: undefined }),
@@ -87,15 +80,9 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
     accessSecret: process.env.SECRET,
     refreshSecret: process.env.REFRESHSECRET,
   });
-  res.cookie("accessToken", accessToken, {
-    httpOnly: true,
-    sameSite: "strict",
-  });
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    sameSite: "strict",
-    path: "/auth/access",
-  });
+
+  setTokenToCookies(res,accessToken,refreshToken)
+
   res.status(200).json({
     user: Object.assign(newUser, { password: undefined }),
     accessToken: accessToken,
@@ -191,15 +178,7 @@ export const login: AsyncCustomRequestHandler<any, Login> = async (
     refreshSecret: process.env.REFRESHSECRET,
   });
 
-  res.cookie("accessToken", accessToken, {
-    httpOnly: true,
-    sameSite: "strict",
-  });
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    sameSite: "strict",
-    path: "/auth/access",
-  });
+  setTokenToCookies(res,accessToken,refreshToken)
 
   res.status(200).json({
     user: Object.assign(user, { password: undefined }),
