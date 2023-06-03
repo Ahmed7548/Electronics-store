@@ -42,7 +42,7 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
   // if user already exist
   if (user) {
     const { accessToken, refreshToken } = createTokens({
-      data: { name: user.name, email: user.email, verified: user.verified },
+      data: { name: user.name, email: user.email,id:user.id, verified: user.verified },
       accessSecret: process.env.SECRET,
       refreshSecret: process.env.REFRESHSECRET,
     });
@@ -56,7 +56,7 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
       sameSite: "strict",
       path: "/auth/access",
     });
-	
+
     res.status(200).json({
       user: Object.assign(user, { password: undefined }),
       accessToken,
@@ -76,6 +76,7 @@ export const continueWithGoogle: AsyncCustomRequestHandler<
   const { accessToken, refreshToken } = createTokens({
     data: {
       name: newUser.name,
+      id: newUser.id,
       email: newUser.email,
       verified: newUser.verified,
     },
@@ -166,7 +167,12 @@ export const login: AsyncCustomRequestHandler<any, Login> = async (
     );
   }
   const { accessToken, refreshToken } = createTokens({
-    data: { name: user.name, email: user.email, verified: user.verified },
+    data: {
+      name: user.name,
+      id: user.id,
+      email: user.email,
+      verified: user.verified,
+    },
     accessSecret: process.env.SECRET,
     refreshSecret: process.env.REFRESHSECRET,
   });
