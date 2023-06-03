@@ -110,6 +110,7 @@ export const signup: AsyncCustomRequestHandler<any, SignUp> = async (
   res,
   next
 ) => {
+
   const { email, first, family, password, confirmedPassword } = req.body;
   const file = req.file;
   if (!req.file) {
