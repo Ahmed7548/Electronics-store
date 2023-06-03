@@ -1,5 +1,4 @@
-import mongoose, { Schema, model, Model } from "mongoose";
-const ObjectID = Schema.Types.ObjectId;
+import  { Schema, model, Model } from "mongoose";
 
 
 
