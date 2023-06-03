@@ -13,8 +13,7 @@ import { AsyncCustomRequestHandler } from "../../types";
 // get all the categories and promoted products and user specific products 
 // specific products is to be determined some time in the future
 export const getInitialData:AsyncCustomRequestHandler<any,{userId:string|undefined}>=async (req,res,next)=>{
-    const {userId}=req.body
-
+    const userId=req.user?.id
     const promotedProducts= Product.getPromated(10)
     const categories= Category.find()
     if(userId){
