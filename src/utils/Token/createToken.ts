@@ -20,10 +20,10 @@ interface Options {
 
 // there is a better way to improve this by adding an options parameter
 export const createTokens = ({
-	data: { email, name },
+	data: { email, name,id,verified },
 	refreshSecret,
 	accessSecret,
-	accessTokenExp = 60 * 10,
+	accessTokenExp ="1 day",
 	refreshTokenExp = "1 days",
 }: Options): TokenObject => {
 	if (!accessSecret) {
@@ -36,11 +36,11 @@ export const createTokens = ({
 			"please provide an refreshSecret secret to the createtoken function"
 		);
 	}
-	const accessToken = sign({ name: name, email: email }, accessSecret, {
+	const accessToken = sign({ name: name, email: email,id:id,verified:verified }, accessSecret, {
 		expiresIn: accessTokenExp,
 		noTimestamp: false,
 	});
-	const refreshToken = sign({ name: name, email: email }, refreshSecret, {
+	const refreshToken = sign({ name: name, email: email,id,verified }, refreshSecret, {
 		expiresIn: refreshTokenExp,
 		noTimestamp: false,
 	});

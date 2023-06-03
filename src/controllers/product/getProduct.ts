@@ -1,5 +1,4 @@
 import type { AsyncCustomRequestHandler } from "../../types/index.js";
-import { GetProductsReq } from "../../json-schemas/schemas/getProducts.js";
 import { Product } from "../../models/Product.js";
 import HttpError from "../../Errors/HTTPError.js";
 

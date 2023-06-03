@@ -65,6 +65,8 @@ router.post(
 	catchAsycError(login)
 );
 
+router.get("/access",)
+
 
 router.get("/verify/:id",catchAsycError(verifyUserEmail))
 
