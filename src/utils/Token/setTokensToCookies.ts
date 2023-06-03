@@ -13,6 +13,6 @@ export const setTokenToCookies = (
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       sameSite: "strict",
-      path: "/auth/access",
+      path: "/auth/refresh",
     });
 };
