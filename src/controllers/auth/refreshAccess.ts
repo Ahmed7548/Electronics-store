@@ -35,8 +35,9 @@ export const refreshAccess: AsyncCustomRequestHandler = async (
         .select("_id")
         .lean();
       // 403 for forbidden
-      if (token) throw new HttpError("this user is banned", 403);
+      if (token) next(new HttpError("this user is banned", 403))
       const { id, iat, exp, name, email, verfied } = decoded as JwtPayload;
+      console.log(refreshToken)
       // when the refresh token is near its expiry it itself is refreshed
       if (iat && exp && exp - iat < timeRefreshTokenLives / 4) {
         const { accessToken, refreshToken: newRefreshToken } = createTokens({
