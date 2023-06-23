@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import { verify } from "jsonwebtoken";
 import HttpError from "../Errors/HTTPError.js";
 const ObjectID = Schema.Types.ObjectId;
-interface UserProps {
+interface UserIn {
 	name: {
 		first: string;
 		family: string;
@@ -27,7 +27,7 @@ interface UserMethods {
 	comparePassword: (password: string) => Promise<boolean>;
 }
 
-interface UserModel extends Model<UserProps, {}, UserMethods> {
+interface UserModel extends Model<UserIn, {}, UserMethods> {
 	verify: (
 		this: UserModel,
 		id: string,
@@ -35,7 +35,7 @@ interface UserModel extends Model<UserProps, {}, UserMethods> {
 	) => Promise<Document<any, any, UserModel> | null>;
 }
 
-const userSchema = new Schema<UserProps>(
+const userSchema = new Schema<UserIn>(
 	{
 		name: {
 			first: {
@@ -135,4 +135,4 @@ userSchema.pre("save", async function (next) {
 
 // doc methods
 
-export const User = model<UserProps, UserModel>("User", userSchema);
+export const User = model<UserIn, UserModel>("User", userSchema);
