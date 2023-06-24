@@ -1,4 +1,12 @@
-import { Schema, Model, Types, Document, NumberExpression, ClientSession } from "mongoose";
+import {
+  Schema,
+  Model,
+  Types,
+  Document,
+  NumberExpression,
+  ClientSession,
+  model,
+} from "mongoose";
 import { Product, ProductIn as FullPRoductIn } from "./Product";
 import { Adress, AsyncReturnType } from "../types";
 import OrderError from "../Errors/OrderError";
@@ -40,18 +48,15 @@ interface OrderIn {
 
 // schema for adress --> could be moved to it's seperate file.
 const adressSchema = new Schema({
-    country: String,
-    governerate: String,
-    city: String,
-    zipCode: String,
-    streat: String,
-    building: String,
-    appartement: String,
-    fullAdress: String,
-  })
-
-
-
+  country: String,
+  governerate: String,
+  city: String,
+  zipCode: String,
+  streat: String,
+  building: String,
+  appartement: String,
+  fullAdress: String,
+});
 
 const orderSchema = new Schema<OrderIn>(
   {
@@ -98,7 +103,7 @@ const orderSchema = new Schema<OrderIn>(
       valAftDisc: Number,
     },
     adresses: {
-      billingAdress:adressSchema,
+      billingAdress: adressSchema,
       shippingAdress: adressSchema,
     },
   },
@@ -109,9 +114,9 @@ const orderSchema = new Schema<OrderIn>(
         products: ProductIn[],
         discount: number,
         userId: Types.ObjectId,
-        adresses:{
-            shippingAdress:Adress;
-            billingAdress:Adress;
+        adresses: {
+          shippingAdress: Adress;
+          billingAdress: Adress;
         }
       ) {
         /* 
@@ -123,79 +128,89 @@ const orderSchema = new Schema<OrderIn>(
             -close transaction
         */
 
-        let session:ClientSession | null = null
+        let session: ClientSession | null = null;
 
-            try{
+        try {
+          //check the quantity of each product
+          const updateProductsQueries: Promise<
+            Document<unknown, any, FullPRoductIn>
+          >[] = [];
+          const insufficientproducts: { id: string; qty: number }[] = [];
+          session = await this.startSession();
+          for (let product of products) {
+            const productStock = await Product.findById(product.id).select(
+              "stock"
+            );
 
-            
-        //check the quantity of each product
-        const updateProductsQueries:Promise< Document<unknown, any, FullPRoductIn>>[] = [];
-        const insufficientproducts: { id: string; qty: number }[] = [];
-         session = await this.startSession();
-        for (let product of products) {
-          const productStock = await Product.findById(product.id).select(
-            "stock"
-          );
+            if (!productStock) {
+              throw new OrderError(
+                `product with the id of ${product.id} does not exist in the db`,
+                [{ id: product.id.toHexString(), qty: 0 }]
+              );
+            }
 
-          if (!productStock) {
+            if (product.qty < productStock.stock.qtyInStock) {
+              productStock.stock.qtyInStock -= product.qty;
+              productStock.stock.qtySold += product.qty;
+              updateProductsQueries.push(
+                productStock.save({ session: session })
+              );
+            } else {
+              insufficientproducts.push({
+                id: product.id.toHexString(),
+                qty: productStock.stock.qtyInStock,
+              });
+            }
+          }
+          if (insufficientproducts.length > 0) {
             throw new OrderError(
-              `product with the id of ${product.id} does not exist in the db`,
-              [{ id: product.id.toHexString(), qty: 0 }]
+              `there is no sufficient stock for these products '${insufficientproducts.join(
+                "-"
+              )}'`,
+              insufficientproducts
             );
           }
+          const order = new this({
+            Products: products,
+            timeSchduale: {
+              placementDate: new Date(),
+              expectedDeliveryDate: expectDelivery(),
+              deliveredAt: null,
+            },
+            totalPrice: {
+              currency: "EGP",
+              ...total(products, discount),
+            },
+            userId: userId,
+            adresses:adresses
+          });
 
-          if (product.qty < productStock.stock.qtyInStock) {
-            productStock.stock.qtyInStock -= product.qty;
-            productStock.stock.qtySold += product.qty;
-            updateProductsQueries.push(productStock.save({session:session}));
-          } else {
-            insufficientproducts.push({
-              id: product.id.toHexString(),
-              qty: productStock.stock.qtyInStock,
-            });
-          }
-        }
-        if (insufficientproducts.length > 0) {
-          throw new OrderError(
-            `there is no sufficient stock for these products '${insufficientproducts.join(
-              "-"
-            )}'`,
-            insufficientproducts
-          );
-        }
-        const order = new this({
-          Products: products,
-          timeSchduale: {
-            placementDate: new Date(),
-            expectedDeliveryDate: expectDelivery(),
-            deliveredAt: null,
-          },
-          totalPrice: {
-            currency: "EGP",
-            ...total(products, discount),
-          },
-          userId: userId,
-        });
-        
-        session.startTransaction();
-        
-        await Promise.all(updateProductsQueries)
-        await order.save({session:session})
-        await User.updateOne({_id:userId},{$push:{
-            orders: order.id
-        }}).session(session)
+          session.startTransaction();
 
-        await session.commitTransaction();
-    } catch (err) {
-        if(session) await session.abortTransaction
-        throw err
-    } finally {
-        if(session) session?.endSession()
-    }
+          await Promise.all(updateProductsQueries);
+          await order.save({ session: session });
+          await User.updateOne(
+            { _id: userId },
+            {
+              $push: {
+                orders: order.id,
+              },
+            }
+          ).session(session);
+
+          await session.commitTransaction();
+        } catch (err) {
+          if (session) await session.abortTransaction;
+          throw err;
+        } finally {
+          if (session) session?.endSession();
+        }
       },
     },
   }
 );
+
+const Order = model("Order", orderSchema);
 
 // functions to be moved to another file
 // expect delivery time
@@ -217,19 +232,6 @@ function total(
   );
   return { valAftDisc: total - discount, value: total };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* 
 thoughts 
