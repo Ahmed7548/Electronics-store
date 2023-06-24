@@ -35,6 +35,9 @@ interface UserModel extends Model<UserIn, {}, UserMethods> {
 	) => Promise<Document<any, any, UserModel> | null>;
 }
 
+// add addresses to user
+
+
 const userSchema = new Schema<UserIn>(
 	{
 		name: {

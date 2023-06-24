@@ -24,3 +24,22 @@ export type AsyncCustomRequestHandler<
 	ReqQuery = any,
 	ReqParams = any
 > = Promisfy<RequestHandler<ReqParams, ResType<ResBody>, ReqBody, ReqQuery>>;
+
+
+
+type AsyncReturnType<T extends (...args: any) => Promise<any>> =
+    T extends (...args: any) => Promise<infer R> ? R : any
+
+
+
+
+interface Adress{
+	country:string;
+	governerate:string;
+	city:string;
+	zipCode:string;
+	streat: string
+	building:string;
+	appartement:string;
+	fullAdress:string;
+}

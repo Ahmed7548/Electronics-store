@@ -1,6 +1,6 @@
 import mongoose, { Schema, model, Model, Document } from "mongoose";
 
-interface Product {
+export interface ProductIn {
   SKU: string;
   name: string;
   price: {
@@ -38,11 +38,11 @@ interface ProductQueryHelpers {
 interface ProductMethods {}
 
 interface ProductModel
-  extends Model<Product, ProductQueryHelpers, ProductMethods> {
+  extends Model<ProductIn, ProductQueryHelpers, ProductMethods> {
     getPromoted: (this:ProductModel,productsLimit:number) => Promise<Document<any, any, ProductModel>[] | null>;
 }
 
-const productSchema = new Schema<Product, ProductModel, ProductMethods>(
+const productSchema = new Schema<ProductIn, ProductModel, ProductMethods>(
   {
     SKU: {
       type: String,
@@ -148,4 +148,4 @@ const productSchema = new Schema<Product, ProductModel, ProductMethods>(
   }
 );
 
-export const Product = model<Product, ProductModel>("Product", productSchema);
+export const Product = model<ProductIn, ProductModel>("Product", productSchema);
