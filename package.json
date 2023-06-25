@@ -6,7 +6,7 @@
 	"scripts": {
 		"test": "jest",
 		"start-dev": "tsc && nodemon build/app.js & tsc -w",
-		"start-server": "nodemon build/app.js",
+		"start-server": "node build/app.js",
 		"compile-ts": "tsc",
 		"compile-ts-w": "tsc -w"
 	},
