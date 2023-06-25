@@ -8,15 +8,18 @@ import {
   model,
 } from "mongoose";
 import { Product, ProductIn as FullPRoductIn } from "./Product";
-import { Adress, AsyncReturnType } from "../types";
 import OrderError from "../Errors/OrderError";
 import { User } from "./User";
 import { applyDiscount } from "../utils/helpers/priceAfterDiscount";
+import { Adress } from "../json-schemas/schemas/order";
 
 interface ProductIn {
-  id: Types.ObjectId;
+  id: string;
   qty: number;
-  price: number;
+  price: {
+    value: number;
+    currency: string;
+  };
   image: string;
   name: string;
   totalPrice: number;
@@ -48,15 +51,18 @@ interface OrderModelIn extends Model<OrderIn> {
   placeOrder: (
     this: OrderModelIn,
     payload: {
-      products: ProductIn[];
-      discount: number;
+      products: { id: string; qty: number }[];
+      discount: {
+        type: "PERCENT" | "VALUE";
+        value: number;
+      };
       userId: Types.ObjectId;
       adresses: {
         shippingAdress: Adress;
         billingAdress: Adress;
       };
     }
-  ) => void;
+  ) => Promise<void>  ;
 }
 
 // schema for adress --> could be moved to it's seperate file.
@@ -104,10 +110,7 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
           currency: String,
         },
         qty: Number,
-        totalPrice: {
-          value: Number,
-          currency: String,
-        },
+        totalPrice:Number,
       },
     ],
     totalPrice: {
@@ -129,14 +132,17 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
         userId,
         adresses,
       }: {
-        products: { id: Types.ObjectId; qty: number }[];
-        discount: number;
+        products: { id: string; qty: number }[];
+        discount: {
+          type: "PERCENT" | "VALUE";
+          value: number;
+        };
         userId: Types.ObjectId;
         adresses: {
           shippingAdress: Adress;
           billingAdress: Adress;
         };
-      }) {
+      }):Promise<Document> {
         /* 
             -check the quantity of each product +++++
             -start transaction +++
@@ -164,14 +170,15 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
               deliveredAt: null,
             },
             totalPrice: {
-              currency: "EGP",
+              currency: "LE",
               ...total(finalProducts, discount),
             },
             userId: userId,
             adresses: adresses,
           });
-
-          session.startTransaction();
+          if(process.env.ENVIRONMENT!=="DEVELOPMENT"){
+            session.startTransaction();
+          }
 
           const result = await Promise.all([
             Promise.all(updatedProductsQueries),
@@ -212,34 +219,26 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
           //     },
           //   }
           // ).session(session);
-
-          await session.commitTransaction();
+          if(process.env.ENVIRONMENT!=="DEVELOPMENT"){
+            await session.commitTransaction();
+          }
+          return result[1]
         } catch (err) {
-          if (session) await session.abortTransaction;
+          if(process.env.ENVIRONMENT!=="DEVELOPMENT"){
+            if (session) await session.abortTransaction;
+          }
           throw err;
         } finally {
-          if (session) await session?.endSession();
+          if(process.env.ENVIRONMENT!=="DEVELOPMENT"){
+            if (session) session?.endSession();
+          }
         }
       },
     },
   }
 );
 
-export const Order = model("Order", orderSchema);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export const Order = model<OrderIn, OrderModelIn>("Order", orderSchema);
 
 // functions to be moved to another file
 // expect delivery time
@@ -250,22 +249,28 @@ function expectDelivery(): Date {
 // calculate total price
 function total(
   products: ProductIn[],
-  discount: number
+  discount: {
+    type: "PERCENT" | "VALUE";
+    value: number;
+  }
 ): {
   value: number;
   valAftDisc: number;
 } {
   const total = products.reduce(
-    (prev, curr) => prev + curr.price * curr.qty,
+    (prev, curr) => prev + curr.price.value * curr.qty,
     0
   );
-  return { valAftDisc: total - discount, value: total };
+  return {
+    valAftDisc: applyDiscount(total, discount.value, discount.type),
+    value: total,
+  };
 }
 
 //abstract the product checking in the database and making queries to update the products qty
 async function getProductsReadyForOrder(
   session: ClientSession,
-  products: { id: Types.ObjectId; qty: number }[]
+  products: { id: string; qty: number }[]
 ): Promise<[Promise<Document<unknown, any, FullPRoductIn>>[], ProductIn[]]> {
   // queries of pruduct model to be updated
   const updatedProductsQueries: Promise<
@@ -281,7 +286,7 @@ async function getProductsReadyForOrder(
   for (let product of products) {
     const dbProduct = await getDbProduct(product.id);
 
-    if (product.qty < dbProduct.stock.qtyInStock) {
+    if (product.qty <= dbProduct.stock.qtyInStock) {
       dbProduct.stock.qtyInStock -= product.qty;
       dbProduct.stock.qtySold += product.qty;
       updatedProductsQueries.push(dbProduct.save({ session: session }));
@@ -296,20 +301,23 @@ async function getProductsReadyForOrder(
         id: product.id,
         image: dbProduct.images.thumbnail,
         name: dbProduct.name,
-        price: productPrice,
+        price:{
+          value:productPrice,
+          currency:dbProduct.price.currency
+        },
         qty: product.qty,
         totalPrice: productPrice * product.qty,
       });
     } else {
       insufficientproducts.push({
-        id: product.id.toHexString(),
+        id: product.id,
         qty: dbProduct.stock.qtyInStock,
       });
     }
   }
   if (insufficientproducts.length > 0) {
     throw new OrderError(
-      `there is no sufficient stock for these products '${insufficientproducts.join(
+      `there is no sufficient stock for these products '${insufficientproducts.map(prod=>prod.id).join(
         "-"
       )}'`,
       insufficientproducts
@@ -320,12 +328,8 @@ async function getProductsReadyForOrder(
 
 //
 async function getDbProduct(
-  id: Types.ObjectId
-): Promise<
-  Document<unknown, any, FullPRoductIn> &
-    Omit<FullPRoductIn & { _id: Types.ObjectId }, never> &
-    any
-> {
+  id: string
+) {
   const dbProduct = await Product.findById(id).select(
     "stock price discount images name"
   );
@@ -333,7 +337,7 @@ async function getDbProduct(
   if (!dbProduct) {
     throw new OrderError(
       `product with the id of ${id} does not exist in the db`,
-      [{ id: id.toHexString(), qty: 0 }]
+      [{ id: id, qty: 0 }]
     );
   }
   return dbProduct;

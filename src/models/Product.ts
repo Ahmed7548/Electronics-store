@@ -59,7 +59,7 @@ const productSchema = new Schema<ProductIn, ProductModel, ProductMethods>(
         type: Number,
       },
       currency: {
-        type: Number,
+        type: String,
         default: "LE",
       },
     },

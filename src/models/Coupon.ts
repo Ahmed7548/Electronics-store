@@ -1,6 +1,16 @@
 import mongoose from "mongoose";
 
-const couponSchema = new mongoose.Schema({
+
+
+interface CouponIn{
+  code : string;
+  discountType: "PERCENT"|"VALUE";
+  discountValue:number;
+  expiredAt:Date;
+  isExpired:()=>boolean
+}
+
+const couponSchema = new mongoose.Schema<CouponIn>({
   code: {
     type: String,
     required: true,
@@ -8,7 +18,7 @@ const couponSchema = new mongoose.Schema({
   discountType: {
     type: String,
     required: true,
-    enum: ["PERCENTAGE", "VALUE"],
+    enum: ["PERCENT", "VALUE"],
   },
   discountValue: {
     type: Number,

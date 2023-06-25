@@ -6,7 +6,6 @@ import { initialDataShema } from "../json-schemas/schemas/initialData";
 import { idintify } from "../middlewares/authorization/idintify";
 
 const router = express.Router();
-router.use(idintify)
 router.get(
   "/initialData",
   validate({ schema: initialDataShema, whatToValidate: "body" }),

@@ -8,3 +8,4 @@ export const applyDiscount= (price:number,discount?:number,discountType?:"VALUE"
         return price-discount
     }
 }
+
