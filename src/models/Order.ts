@@ -11,6 +11,7 @@ import { Product, ProductIn as FullPRoductIn } from "./Product";
 import { Adress, AsyncReturnType } from "../types";
 import OrderError from "../Errors/OrderError";
 import { User } from "./User";
+import { applyDiscount } from "../utils/helpers/priceAfterDiscount";
 
 interface ProductIn {
   id: Types.ObjectId;
@@ -145,72 +146,16 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
             -close transaction
         */
 
-        const finalProducts: ProductIn[] = [];
-
         let session: ClientSession | null = null;
 
         try {
-          //check the quantity of each product
-          const updatedProductsQueries: Promise<
-            Document<unknown, any, FullPRoductIn>
-          >[] = [];
-          const insufficientproducts: { id: string; qty: number }[] = [];
+          //the session to start the transaction with
           session = await this.startSession();
 
-          for (let product of products) {
-            const dbProduct = await Product.findById(product.id).select(
-              "stock price discount images name"
-            );
+          const [updatedProductsQueries, finalProducts] =
+            await getProductsReadyForOrder(session, products);
 
-            if (!dbProduct) {
-              throw new OrderError(
-                `product with the id of ${product.id} does not exist in the db`,
-                [{ id: product.id.toHexString(), qty: 0 }]
-              );
-            }
-
-            if (product.qty < dbProduct.stock.qtyInStock) {
-              dbProduct.stock.qtyInStock -= product.qty;
-              dbProduct.stock.qtySold += product.qty;
-              updatedProductsQueries.push(dbProduct.save({ session: session }));
-
-              const productPrice = ((product: typeof dbProduct): number => {
-                if (!product.discount || product.discount.discount === 0) {
-                  return product.price.price;
-                }
-                if (product.discount.type === "PERCENT") {
-                  return (
-                    product.price.price -
-                    product.price.price * (product.discount.discount / 100)
-                  );
-                } else {
-                  return product.price.price - product.discount.discount;
-                }
-              })(dbProduct);
-
-              finalProducts.push({
-                id: product.id,
-                image: dbProduct.images.thumbnail,
-                name: dbProduct.name,
-                price: productPrice,
-                qty: product.qty,
-                totalPrice: productPrice * product.qty,
-              });
-            } else {
-              insufficientproducts.push({
-                id: product.id.toHexString(),
-                qty: dbProduct.stock.qtyInStock,
-              });
-            }
-          }
-          if (insufficientproducts.length > 0) {
-            throw new OrderError(
-              `there is no sufficient stock for these products '${insufficientproducts.join(
-                "-"
-              )}'`,
-              insufficientproducts
-            );
-          }
+          // new order
           const order = new this({
             products: finalProducts,
             timeSchduale: {
@@ -228,23 +173,52 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
 
           session.startTransaction();
 
-          await Promise.all(updatedProductsQueries);
-          await order.save({ session: session });
-          await User.updateOne(
-            { _id: userId },
-            {
-              $push: {
-                orders: order.id,
-              },
-            }
-          ).session(session);
+          const result = await Promise.all([
+            Promise.all(updatedProductsQueries),
+            order.save({ session: session }),
+            User.updateOne(
+              { _id: userId },
+              {
+                $push: {
+                  orders: order.id,
+                },
+              }
+            ).session(session),
+          ]);
+
+          console.log(
+            result,
+            `<-- the result of await Promise.all([
+            Promise.all(updatedProductsQueries),
+            order.save({ session: session }),
+            User.updateOne(
+             { _id: userId },
+             {
+               $push: {
+                 orders: order.id,
+               },
+             }
+           ).session(session),
+         ]);`
+          );
+
+          // await Promise.all(updatedProductsQueries);
+          // await order.save({ session: session });
+          // await User.updateOne(
+          //   { _id: userId },
+          //   {
+          //     $push: {
+          //       orders: order.id,
+          //     },
+          //   }
+          // ).session(session);
 
           await session.commitTransaction();
         } catch (err) {
           if (session) await session.abortTransaction;
           throw err;
         } finally {
-          if (session) session?.endSession();
+          if (session) await session?.endSession();
         }
       },
     },
@@ -252,6 +226,20 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
 );
 
 export const Order = model("Order", orderSchema);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // functions to be moved to another file
 // expect delivery time
@@ -274,10 +262,82 @@ function total(
   return { valAftDisc: total - discount, value: total };
 }
 
+//abstract the product checking in the database and making queries to update the products qty
+async function getProductsReadyForOrder(
+  session: ClientSession,
+  products: { id: Types.ObjectId; qty: number }[]
+): Promise<[Promise<Document<unknown, any, FullPRoductIn>>[], ProductIn[]]> {
+  // queries of pruduct model to be updated
+  const updatedProductsQueries: Promise<
+    Document<unknown, any, FullPRoductIn>
+  >[] = [];
 
+  // final products readuy to be added to the order document
+  const finalProducts: ProductIn[] = [];
+
+  //insufficient product if existed to return an informative error message
+  const insufficientproducts: { id: string; qty: number }[] = [];
+
+  for (let product of products) {
+    const dbProduct = await getDbProduct(product.id);
+
+    if (product.qty < dbProduct.stock.qtyInStock) {
+      dbProduct.stock.qtyInStock -= product.qty;
+      dbProduct.stock.qtySold += product.qty;
+      updatedProductsQueries.push(dbProduct.save({ session: session }));
+
+      const productPrice = applyDiscount(
+        dbProduct.price.price,
+        dbProduct.discount?.discount,
+        dbProduct.discount?.type
+      );
+
+      finalProducts.push({
+        id: product.id,
+        image: dbProduct.images.thumbnail,
+        name: dbProduct.name,
+        price: productPrice,
+        qty: product.qty,
+        totalPrice: productPrice * product.qty,
+      });
+    } else {
+      insufficientproducts.push({
+        id: product.id.toHexString(),
+        qty: dbProduct.stock.qtyInStock,
+      });
+    }
+  }
+  if (insufficientproducts.length > 0) {
+    throw new OrderError(
+      `there is no sufficient stock for these products '${insufficientproducts.join(
+        "-"
+      )}'`,
+      insufficientproducts
+    );
+  }
+  return [updatedProductsQueries, finalProducts];
+}
 
 //
-
+async function getDbProduct(
+  id: Types.ObjectId
+): Promise<
+  Document<unknown, any, FullPRoductIn> &
+    Omit<FullPRoductIn & { _id: Types.ObjectId }, never> &
+    any
+> {
+  const dbProduct = await Product.findById(id).select(
+    "stock price discount images name"
+  );
+  // notify the user that this product does not exist in the first place
+  if (!dbProduct) {
+    throw new OrderError(
+      `product with the id of ${id} does not exist in the db`,
+      [{ id: id.toHexString(), qty: 0 }]
+    );
+  }
+  return dbProduct;
+}
 /* 
 thoughts 
     depending on constraints of the schema can we remove the parts were we check for sufficient stock for the product ???
