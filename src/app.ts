@@ -6,6 +6,7 @@ dotenv.config({});
 import connectToDB from "./utils/db/dbConnection.js";
 import authRouter from "./routers/auth.js";
 import productRouter from "./routers/product.js";
+import orderRouter from "./routers/order.js";
 import cors from "cors";
 import { errorHandler } from "./middlewares/ErrorHandler.js";
 import cookieParser from "cookie-parser";
@@ -49,6 +50,7 @@ app.get("/",(req,res,next)=>{
 app.use("/",initialDataRouter)
 app.use("/auth", authRouter);
 app.use("/prod", productRouter);
+app.use("/order",orderRouter)
 
 app.use(express.static(__dirname.replace("build", "public")));
 

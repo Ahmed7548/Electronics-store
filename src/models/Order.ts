@@ -14,14 +14,11 @@ import { User } from "./User";
 
 interface ProductIn {
   id: Types.ObjectId;
+  qty: number;
+  price: number;
   image: string;
   name: string;
-  price: { value: number; currency: string };
-  qty: number;
-  totalPrice: {
-    value: number;
-    currency: string;
-  };
+  totalPrice: number;
 }
 
 // don't forget adresses
@@ -34,7 +31,7 @@ interface OrderIn {
     expectedDeliveryDate: Date;
     deliveredAt: Date | null;
   };
-  Products: ProductIn[];
+  products: ProductIn[];
   totalPrice: {
     value: number;
     currency: string;
@@ -44,6 +41,21 @@ interface OrderIn {
     billingAdress: Adress;
     shippingAdress: Adress;
   };
+}
+
+interface OrderModelIn extends Model<OrderIn> {
+  placeOrder: (
+    this: OrderModelIn,
+    payload: {
+      products: ProductIn[];
+      discount: number;
+      userId: Types.ObjectId;
+      adresses: {
+        shippingAdress: Adress;
+        billingAdress: Adress;
+      };
+    }
+  ) => void;
 }
 
 // schema for adress --> could be moved to it's seperate file.
@@ -58,7 +70,7 @@ const adressSchema = new Schema({
   fullAdress: String,
 });
 
-const orderSchema = new Schema<OrderIn>(
+const orderSchema = new Schema<OrderIn, OrderModelIn>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -78,7 +90,7 @@ const orderSchema = new Schema<OrderIn>(
         default: null,
       },
     },
-    Products: [
+    products: [
       {
         id: {
           type: Types.ObjectId,
@@ -110,15 +122,20 @@ const orderSchema = new Schema<OrderIn>(
   {
     methods: {},
     statics: {
-      async placeOrder(
-        products: ProductIn[],
-        discount: number,
-        userId: Types.ObjectId,
+      async placeOrder({
+        products,
+        discount,
+        userId,
+        adresses,
+      }: {
+        products: { id: Types.ObjectId; qty: number }[];
+        discount: number;
+        userId: Types.ObjectId;
         adresses: {
           shippingAdress: Adress;
           billingAdress: Adress;
-        }
-      ) {
+        };
+      }) {
         /* 
             -check the quantity of each product +++++
             -start transaction +++
@@ -128,37 +145,61 @@ const orderSchema = new Schema<OrderIn>(
             -close transaction
         */
 
+        const finalProducts: ProductIn[] = [];
+
         let session: ClientSession | null = null;
 
         try {
           //check the quantity of each product
-          const updateProductsQueries: Promise<
+          const updatedProductsQueries: Promise<
             Document<unknown, any, FullPRoductIn>
           >[] = [];
           const insufficientproducts: { id: string; qty: number }[] = [];
           session = await this.startSession();
+
           for (let product of products) {
-            const productStock = await Product.findById(product.id).select(
-              "stock"
+            const dbProduct = await Product.findById(product.id).select(
+              "stock price discount images name"
             );
 
-            if (!productStock) {
+            if (!dbProduct) {
               throw new OrderError(
                 `product with the id of ${product.id} does not exist in the db`,
                 [{ id: product.id.toHexString(), qty: 0 }]
               );
             }
 
-            if (product.qty < productStock.stock.qtyInStock) {
-              productStock.stock.qtyInStock -= product.qty;
-              productStock.stock.qtySold += product.qty;
-              updateProductsQueries.push(
-                productStock.save({ session: session })
-              );
+            if (product.qty < dbProduct.stock.qtyInStock) {
+              dbProduct.stock.qtyInStock -= product.qty;
+              dbProduct.stock.qtySold += product.qty;
+              updatedProductsQueries.push(dbProduct.save({ session: session }));
+
+              const productPrice = ((product: typeof dbProduct): number => {
+                if (!product.discount || product.discount.discount === 0) {
+                  return product.price.price;
+                }
+                if (product.discount.type === "PERCENT") {
+                  return (
+                    product.price.price -
+                    product.price.price * (product.discount.discount / 100)
+                  );
+                } else {
+                  return product.price.price - product.discount.discount;
+                }
+              })(dbProduct);
+
+              finalProducts.push({
+                id: product.id,
+                image: dbProduct.images.thumbnail,
+                name: dbProduct.name,
+                price: productPrice,
+                qty: product.qty,
+                totalPrice: productPrice * product.qty,
+              });
             } else {
               insufficientproducts.push({
                 id: product.id.toHexString(),
-                qty: productStock.stock.qtyInStock,
+                qty: dbProduct.stock.qtyInStock,
               });
             }
           }
@@ -171,7 +212,7 @@ const orderSchema = new Schema<OrderIn>(
             );
           }
           const order = new this({
-            Products: products,
+            products: finalProducts,
             timeSchduale: {
               placementDate: new Date(),
               expectedDeliveryDate: expectDelivery(),
@@ -179,15 +220,15 @@ const orderSchema = new Schema<OrderIn>(
             },
             totalPrice: {
               currency: "EGP",
-              ...total(products, discount),
+              ...total(finalProducts, discount),
             },
             userId: userId,
-            adresses:adresses
+            adresses: adresses,
           });
 
           session.startTransaction();
 
-          await Promise.all(updateProductsQueries);
+          await Promise.all(updatedProductsQueries);
           await order.save({ session: session });
           await User.updateOne(
             { _id: userId },
@@ -210,7 +251,7 @@ const orderSchema = new Schema<OrderIn>(
   }
 );
 
-const Order = model("Order", orderSchema);
+export const Order = model("Order", orderSchema);
 
 // functions to be moved to another file
 // expect delivery time
@@ -227,11 +268,15 @@ function total(
   valAftDisc: number;
 } {
   const total = products.reduce(
-    (prev, curr) => prev + curr.price.value * curr.qty,
+    (prev, curr) => prev + curr.price * curr.qty,
     0
   );
   return { valAftDisc: total - discount, value: total };
 }
+
+
+
+//
 
 /* 
 thoughts 

@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"scripts": {
 		"test": "jest",
-		"start-dev": "tsc & nodemon build/app.js",
+		"start-dev": "tsc && nodemon build/app.js & tsc -w",
 		"start-server": "nodemon build/app.js",
 		"compile-ts": "tsc",
 		"compile-ts-w": "tsc -w"
@@ -41,6 +41,7 @@
 		"@types/server-destroy": "^1.0.1",
 		"concurrently": "^8.0.1",
 		"nodemon": "^2.0.22",
-		"tsc": "^2.0.4"
+		"tsc": "^2.0.4",
+		"typescript": "^5.1.3"
 	}
 }

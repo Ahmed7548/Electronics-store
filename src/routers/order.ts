@@ -6,7 +6,7 @@ import { checkCoupon } from "../controllers/order/checkcoupon";
 const router = express.Router();
 
 router.get(
-  "check/coupon",
+  "/check/coupon",
   validate({ schema: couponSchema, whatToValidate: "body" }),
   catchAsycError(checkCoupon)
 );
