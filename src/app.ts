@@ -6,10 +6,14 @@ dotenv.config({});
 import connectToDB from "./utils/db/dbConnection.js";
 import authRouter from "./routers/auth.js";
 import productRouter from "./routers/product.js";
+import orderRouter from "./routers/order.js";
 import cors from "cors";
 import { errorHandler } from "./middlewares/ErrorHandler.js";
 import cookieParser from "cookie-parser";
 import initialDataRouter from "./routers/initialData.js"
+import { idintify } from "./middlewares/authorization/idintify.js";
+import { isAuthorized } from "./middlewares/authorization/IsAuthorized.js";
+import catchAsycError from "./utils/helpers/catchAsycError.js";
 
 
 declare global {
@@ -45,10 +49,11 @@ app.use(cookieParser())
 app.get("/",(req,res,next)=>{
 	res.send("working")
 })
-
+app.use(idintify)
 app.use("/",initialDataRouter)
 app.use("/auth", authRouter);
 app.use("/prod", productRouter);
+app.use("/order",catchAsycError(isAuthorized),orderRouter)
 
 app.use(express.static(__dirname.replace("build", "public")));
 
