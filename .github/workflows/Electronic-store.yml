@@ -26,6 +26,5 @@ jobs:
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
       - run : npm install
-      - run : npm install -g typescript
-      - run : npm run compile-ts
+      - run : npx tsc
       - run : npm run start-server
