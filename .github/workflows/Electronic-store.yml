@@ -28,4 +28,4 @@ jobs:
       - run : npm install
       - run : npm install typescript
       - run : npx tsc
-      - run : npm run start-server
+      # - run : npm run start-server
