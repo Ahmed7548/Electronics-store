@@ -33,7 +33,10 @@ export const order:AsyncCustomRequestHandler<any,CancelOrderIn> =async (req,res,
     if (!order ) throw new HttpError(`there is no order with id:${orderId} `,404)
 
     if (order.userId.toString()!== userId)  throw new HttpError("cannot cancell ohters orders", 400)
+
+    if (["Delivered","Returned","Cancelled"].includes(order.shippingStatus)) throw new HttpError(`you can't cancell an order that has been ${order.shippingStatus}`,400)
     
+    await order.cancel()
     
 }
 

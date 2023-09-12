@@ -1,9 +1,8 @@
-import {
+import mongoose, {
   Schema,
   Model,
   Types,
   Document,
-  NumberExpression,
   ClientSession,
   model,
 } from "mongoose";
@@ -45,6 +44,15 @@ interface OrderIn {
     billingAdress: Adress;
     shippingAdress: Adress;
   };
+  shippingStatus:
+    | "Order-Placed"
+    | "Shipped"
+    | "In-Transit"
+    | "Out-for-Delivery"
+    | "Delivered"
+    | "Returned"
+    | "Cancelled";
+  cancel: () => Promise<void>;
 }
 
 interface OrderModelIn extends Model<OrderIn> {
@@ -62,7 +70,7 @@ interface OrderModelIn extends Model<OrderIn> {
         billingAdress: Adress;
       };
     }
-  ) => Promise<void>  ;
+  ) => Promise<void>;
 }
 
 // schema for adress --> could be moved to it's seperate file.
@@ -110,7 +118,7 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
           currency: String,
         },
         qty: Number,
-        totalPrice:Number,
+        totalPrice: Number,
       },
     ],
     totalPrice: {
@@ -122,9 +130,33 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
       billingAdress: adressSchema,
       shippingAdress: adressSchema,
     },
+    shippingStatus: { type: String, default: "Order-Placed" },
   },
   {
-    methods: {},
+    methods: {
+      async cancel() {
+        const productUpdate: ReturnType<typeof Product.updateOne>[] = [];
+
+        if (this.shippingStatus === "Order-Placed") {
+          for (let product of this.products) {
+            productUpdate.push(
+              Product.updateOne(
+                { id: new mongoose.Schema.Types.ObjectId(product.id) },
+                {
+                  $inc: {
+                    "stock.qtyInStock": product.qty,
+                    "stock.qtySold": -product.qty,
+                  },
+                }
+              )
+            );
+          }
+        }
+        this.shippingStatus = "Cancelled";
+
+        await Promise.all([this.save(), ...productUpdate]);
+      },
+    },
     statics: {
       async placeOrder({
         products,
@@ -142,7 +174,7 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
           shippingAdress: Adress;
           billingAdress: Adress;
         };
-      }):Promise<Document> {
+      }): Promise<Document> {
         /* 
             -check the quantity of each product +++++
             -start transaction +++
@@ -176,7 +208,7 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
             userId: userId,
             adresses: adresses,
           });
-          if(process.env.ENVIRONMENT!=="DEVELOPMENT"){
+          if (process.env.ENVIRONMENT !== "DEVELOPMENT") {
             session.startTransaction();
           }
 
@@ -219,17 +251,17 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
           //     },
           //   }
           // ).session(session);
-          if(process.env.ENVIRONMENT!=="DEVELOPMENT"){
+          if (process.env.ENVIRONMENT !== "DEVELOPMENT") {
             await session.commitTransaction();
           }
-          return result[1]
+          return result[1];
         } catch (err) {
-          if(process.env.ENVIRONMENT!=="DEVELOPMENT"){
+          if (process.env.ENVIRONMENT !== "DEVELOPMENT") {
             if (session) await session.abortTransaction;
           }
           throw err;
         } finally {
-          if(process.env.ENVIRONMENT!=="DEVELOPMENT"){
+          if (process.env.ENVIRONMENT !== "DEVELOPMENT") {
             if (session) session?.endSession();
           }
         }
@@ -301,9 +333,9 @@ async function getProductsReadyForOrder(
         id: product.id,
         image: dbProduct.images.thumbnail,
         name: dbProduct.name,
-        price:{
-          value:productPrice,
-          currency:dbProduct.price.currency
+        price: {
+          value: productPrice,
+          currency: dbProduct.price.currency,
         },
         qty: product.qty,
         totalPrice: productPrice * product.qty,
@@ -317,9 +349,9 @@ async function getProductsReadyForOrder(
   }
   if (insufficientproducts.length > 0) {
     throw new OrderError(
-      `there is no sufficient stock for these products '${insufficientproducts.map(prod=>prod.id).join(
-        "-"
-      )}'`,
+      `there is no sufficient stock for these products '${insufficientproducts
+        .map((prod) => prod.id)
+        .join("-")}'`,
       insufficientproducts
     );
   }
@@ -327,9 +359,7 @@ async function getProductsReadyForOrder(
 }
 
 //
-async function getDbProduct(
-  id: string
-) {
+async function getDbProduct(id: string) {
   const dbProduct = await Product.findById(id).select(
     "stock price discount images name"
   );
@@ -345,6 +375,4 @@ async function getDbProduct(
 /* 
 thoughts 
     depending on constraints of the schema can we remove the parts were we check for sufficient stock for the product ???
-
-
 */
