@@ -21,7 +21,7 @@ import { Types } from "mongoose";
 
 
 
-export const order:AsyncCustomRequestHandler<any,CancelOrderIn> =async (req,res,next)=>{
+export const cancelOrder:AsyncCustomRequestHandler<any,CancelOrderIn> =async (req,res,next)=>{
     const userId= req.user?.id
     const {id:orderId} = req.body
 
@@ -33,12 +33,16 @@ export const order:AsyncCustomRequestHandler<any,CancelOrderIn> =async (req,res,
     if (!order ) throw new HttpError(`there is no order with id:${orderId} `,404)
 
     if (order.userId.toString()!== userId)  throw new HttpError("cannot cancell ohters orders", 400)
-
+    console.log(order,"orderrrrr")
     if (["Delivered","Returned","Cancelled"].includes(order.shippingStatus)) throw new HttpError(`you can't cancell an order that has been ${order.shippingStatus}`,400)
     
     await order.cancel()
+    res.status(200).json({msg:"order cancelled successfully"})
     
 }
+
+
+
 
 
 

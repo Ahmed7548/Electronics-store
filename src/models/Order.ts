@@ -136,25 +136,25 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
     methods: {
       async cancel() {
         const productUpdate: ReturnType<typeof Product.updateOne>[] = [];
-
         if (this.shippingStatus === "Order-Placed") {
           for (let product of this.products) {
             productUpdate.push(
               Product.updateOne(
-                { id: new mongoose.Schema.Types.ObjectId(product.id) },
+                { _id: new mongoose.Types.ObjectId(product.id) },
                 {
                   $inc: {
                     "stock.qtyInStock": product.qty,
                     "stock.qtySold": -product.qty,
                   },
                 }
-              )
-            );
-          }
-        }
+                )
+                );
+              }
+            }
         this.shippingStatus = "Cancelled";
 
-        await Promise.all([this.save(), ...productUpdate]);
+        const data=await Promise.all([this.save(), ...productUpdate]);
+        console.log(data)
       },
     },
     statics: {
