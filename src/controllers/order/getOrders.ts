@@ -8,11 +8,11 @@ import { Types } from "mongoose";
 import UnhandledError from "../../Errors/UnhandledError";
 import { Order } from "../../models/Order";
 import { AsyncCustomRequestHandler } from "../../types";
-import { GetOrderReqBodyIn } from "../../json-schemas/schemas/getOrders";
+import { GetOrdersReqBodyIn } from "../../json-schemas/schemas/getOrders";
 
 export const getOrders: AsyncCustomRequestHandler<
   any,
-  GetOrderReqBodyIn
+  GetOrdersReqBodyIn
 > = async (req, res, next) => {
   const userId = req.user?.id;
   const { Items_Per_Page, page } = req.body;

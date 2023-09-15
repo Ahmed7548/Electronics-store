@@ -11,4 +11,4 @@ export const getOrdersSchema = z.object({
   ),
 });
 
-export type GetOrderReqBodyIn = z.infer<typeof getOrdersSchema>;
+export type GetOrdersReqBodyIn = z.infer<typeof getOrdersSchema>;

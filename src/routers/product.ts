@@ -8,20 +8,18 @@ import { getProductSchema } from "../json-schemas/schemas/getProduct.js";
 const router = express.Router();
 
 router.get(
-	"/product/:id",
-	validate({ schema: getProductSchema, whatToValidate: "params" }),
-	catchAsycError(getProduct)
+  "/product/:id",
+  validate({ schema: getProductSchema, whatToValidate: "params" }),
+  catchAsycError(getProduct)
 );
 
 router.get(
-	"/products",
-	validate({
-		schema: getProductsSchema,
-		whatToValidate: "body",
-	}),
-	catchAsycError(getProducts)
+  "/products",
+  validate({
+    schema: getProductsSchema,
+    whatToValidate: "body",
+  }),
+  catchAsycError(getProducts)
 );
-
-
 
 export default router;
