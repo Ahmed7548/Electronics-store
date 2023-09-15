@@ -55,7 +55,12 @@ interface OrderIn {
   cancel: () => Promise<void>;
 }
 
-interface OrderModelIn extends Model<OrderIn> {
+
+interface OrderQueryHelper {
+  paginate: <T>(this: T, options: { page: number; records: number }) => T;
+}
+
+interface OrderModelIn extends Model<OrderIn,OrderQueryHelper> {
   placeOrder: (
     this: OrderModelIn,
     payload: {
@@ -133,28 +138,31 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
     shippingStatus: { type: String, default: "Order-Placed" },
   },
   {
+    query:{
+        paginate({ page, records }: { page: number; records: number }) {
+          const skipped = (page - 1) * records;
+          return this.skip(skipped).limit(records);
+        }
+    },
     methods: {
       async cancel() {
-        const productUpdate: ReturnType<typeof Product.updateOne>[] = [];
+        let productUpdate: ReturnType<typeof Product.updateOne>[] = [];
         if (this.shippingStatus === "Order-Placed") {
-          for (let product of this.products) {
-            productUpdate.push(
-              Product.updateOne(
-                { _id: new mongoose.Types.ObjectId(product.id) },
-                {
-                  $inc: {
-                    "stock.qtyInStock": product.qty,
-                    "stock.qtySold": -product.qty,
-                  },
-                }
-                )
-                );
+          productUpdate = this.products.map((product) => {
+            return Product.updateOne(
+              { _id: new mongoose.Types.ObjectId(product.id) },
+              {
+                $inc: {
+                  "stock.qtyInStock": product.qty,
+                  "stock.qtySold": -product.qty,
+                },
               }
-            }
+            );
+          });
+        }
         this.shippingStatus = "Cancelled";
 
-        const data=await Promise.all([this.save(), ...productUpdate]);
-        console.log(data)
+        const data = await Promise.all([this.save(), ...productUpdate]);
       },
     },
     statics: {
@@ -240,17 +248,6 @@ const orderSchema = new Schema<OrderIn, OrderModelIn>(
            ).session(session),
          ]);`
           );
-
-          // await Promise.all(updatedProductsQueries);
-          // await order.save({ session: session });
-          // await User.updateOne(
-          //   { _id: userId },
-          //   {
-          //     $push: {
-          //       orders: order.id,
-          //     },
-          //   }
-          // ).session(session);
           if (process.env.ENVIRONMENT !== "DEVELOPMENT") {
             await session.commitTransaction();
           }
@@ -372,7 +369,3 @@ async function getDbProduct(id: string) {
   }
   return dbProduct;
 }
-/* 
-thoughts 
-    depending on constraints of the schema can we remove the parts were we check for sufficient stock for the product ???
-*/

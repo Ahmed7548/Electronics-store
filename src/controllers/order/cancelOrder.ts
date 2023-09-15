@@ -37,8 +37,7 @@ export const cancelOrder:AsyncCustomRequestHandler<any,CancelOrderIn> =async (re
     if (["Delivered","Returned","Cancelled"].includes(order.shippingStatus)) throw new HttpError(`you can't cancell an order that has been ${order.shippingStatus}`,400)
     
     await order.cancel()
-    res.status(200).json({msg:"order cancelled successfully"})
-    
+    res.status(200).json({msg:"order cancelled successfully",order})   
 }
 
 

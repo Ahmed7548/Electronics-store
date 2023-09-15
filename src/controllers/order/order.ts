@@ -1,11 +1,9 @@
 import { AsyncCustomRequestHandler } from "../../types";
-import { Product } from "../../models/Product";
 import {Order} from "../../models/Order"
 import { OrderReq } from "../../json-schemas/schemas/order";
 import HttpError from "../../Errors/HTTPError";
 import { Coupon } from "../../models/Coupon";
 import { Types } from "mongoose";
-// import the interface created by the zod 
 
 
 
@@ -19,7 +17,7 @@ export const order:AsyncCustomRequestHandler<any,OrderReq> =async (req,res,next)
     }
 
     if(!userId){
-        throw new HttpError("user is not signed on",401)
+        throw new HttpError("user is not signed in",401)
     }
     const coupon=await Coupon.findOne({ code: code })
 
@@ -40,8 +38,3 @@ export const order:AsyncCustomRequestHandler<any,OrderReq> =async (req,res,next)
     res.status(200).json({msg:"order placed successfully",order:order})
     
 }
-
-
-
-
-

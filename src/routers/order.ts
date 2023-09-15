@@ -7,6 +7,8 @@ import { orderSchema } from "../json-schemas/schemas/order";
 import { order } from "../controllers/order/order";
 import { cancleOrderSchema } from "../json-schemas/schemas/cancelOrder";
 import { cancelOrder } from "../controllers/order/cancelOrder";
+import { getOrdersSchema } from "../json-schemas/schemas/getOrders";
+import { getOrders } from "../controllers/order/getOrders";
 const router = express.Router();
 
 router.get(
@@ -14,6 +16,8 @@ router.get(
   validate({ schema: couponSchema, whatToValidate: "body" }),
   catchAsycError(checkCoupon)
 );
+
+router.get("/orders",validate({schema:getOrdersSchema,whatToValidate:"body"}),catchAsycError(getOrders))
 
 router.post(
   "/place",
