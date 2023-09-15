@@ -16,12 +16,15 @@ export const getOrders: AsyncCustomRequestHandler<
 > = async (req, res, next) => {
   const userId = req.user?.id;
   const { Items_Per_Page, page } = req.body;
+
   if (!userId) throw new UnhandledError("the user is not signed in!!!!!");
   const orders = await Order.find({ userId: new Types.ObjectId(userId) })
     .sort({ "timeSchduale.placementDate": -1 })
     .paginate({
       page: page || 1,
       records: Items_Per_Page || 20,
-    }).select("totalPrice shippingStatus timeSchduale _id");//select the records to be retrieved
-    res.status(200).json({orders:orders})
+    })
+    .select("totalPrice shippingStatus timeSchduale _id"); //select the records to be retrieved
+    
+  res.status(200).json({ orders: orders });
 };
