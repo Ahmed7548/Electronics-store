@@ -5,10 +5,11 @@
 	"main": "index.js",
 	"scripts": {
 		"test": "jest",
-		"start-dev": "tsc && nodemon build/app.js & tsc -w",
+		"start-dev": "tsc && nodemon build/app.js",
 		"start-server": "node build/app.js",
-		"compile-ts": "npx typescript",
-		"compile-ts-w": "tsc -w"
+		"compile-ts": "tsc",
+		"compile-ts-w": "tsc -w",
+		"start": "node app.js"
 	},
 	"keywords": [],
 	"author": "",
